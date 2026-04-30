@@ -5,6 +5,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <BuildMod>false</BuildMod>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
