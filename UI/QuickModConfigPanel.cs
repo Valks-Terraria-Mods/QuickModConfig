@@ -10,7 +10,7 @@ using ValkyrieLib;
 
 namespace QuickModConfig;
 
-public class QuickModConfigPanel : UIState, IInputConsumer, IClosable
+public class QuickModConfigPanel : UIState, IBlocksInput, IHasCloseButton
 {
     public UIElement MainElement { get; private set; } = null!;
 
@@ -79,10 +79,6 @@ public class QuickModConfigPanel : UIState, IInputConsumer, IClosable
 
         _panel.Append(uiList);
         _panel.Append(_uiScrollbar);
-        
-        var closeButton = ValkyrieAPI.UI.CreateCloseButton();
-        closeButton.OnLeftClick += (_, _) => CloseRequested?.Invoke();
-        _panel.Append(closeButton);
 
         MainElement = _panel;
     }
