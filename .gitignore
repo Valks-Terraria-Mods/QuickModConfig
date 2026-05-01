@@ -2,5 +2,6 @@
 obj/
 bin/
 
-# Source
+# Terraria
 Source/
+Logs.text
