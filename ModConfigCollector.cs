@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
-using log4net.Repository.Hierarchy;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
@@ -11,9 +10,9 @@ namespace QuickModConfig;
 
 public sealed class ModConfigCollector
 {
-    public static Dictionary<string, ModConfigData> Collect()
+    public static List<ModConfigDataGroup> Collect()
     {
-        var modConfigs = new Dictionary<string, ModConfigData>();
+        var modDataList = new List<ModConfigDataGroup>();
         
         foreach (var mod in ModLoader.Mods)
         {
@@ -21,6 +20,12 @@ public sealed class ModConfigCollector
             // Skipping ModLoader as this appears to be the core built-in tModLoader mod
             if (mod.Code is null || mod.Name.Equals("ModLoader", StringComparison.Ordinal))
                 continue;
+
+            var modData = new ModConfigDataGroup()
+            {
+                ModName = mod.Name,
+                ModConfigs = []
+            };
 
             foreach (var type in AssemblyManager.GetLoadableTypes(mod.Code))
             {
@@ -62,17 +67,25 @@ public sealed class ModConfigCollector
                     });
                 }
 
-                modConfigs.Add(mod.Name, new ModConfigData()
+                modData.ModConfigs.Add(new ModConfigData()
                 {
                     ModConfigName = type.Name,
                     ConfigScope = config.Mode,
                     ModConfigEntries = entries
                 });
             }
+
+            modDataList.Add(modData);
         }
 
-        return modConfigs;
+        return modDataList;
     }
+}
+
+public sealed record ModConfigDataGroup
+{
+    public required string ModName { get; init; }
+    public required List<ModConfigData> ModConfigs { get; init; }
 }
 
 public sealed record ModConfigData
