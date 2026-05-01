@@ -13,7 +13,6 @@ public class QuickModConfig : Mod
     public override void Load()
     {
         _modHandle = ValkyrieAPI.GetHandle(this);
-        _modHandle.RegisterUI("Quick Mod Config", "L", () => new QuickModConfigPanel());
 
         foreach (var modDataGroup in ModConfigCollector.Collect())
         {
@@ -27,6 +26,8 @@ public class QuickModConfig : Mod
                     Log($"    {entry.Name} ({entry.ValueType}) = {entry.DefaultValue}");
             }
         }
+
+        _modHandle.RegisterUI("Quick Mod Config", "L", () => new QuickModConfigPanel());
     }
 
     public static void Log(object message)
