@@ -8,13 +8,13 @@ namespace QuickModConfig;
 
 public class QuickModConfig : Mod
 {
-    private static readonly string _logPath = Path.Combine(Main.SavePath, "ModSources", nameof(QuickModConfig), "Logs.txt");
+    private static ModHandle _modHandle = null!;
 
     public override void Load()
     {
-        // Clear log file
-        File.WriteAllText(_logPath, "");
-
+        _modHandle = ValkyrieAPI.GetHandle(this);
+        _modHandle.RegisterUI("Quick Mod Config", "L", () => new QuickModConfigPanel());
+        
         foreach (var modConfig in ModConfigCollector.Collect())
         {
             var modName = modConfig.Key;
@@ -26,13 +26,10 @@ public class QuickModConfig : Mod
             foreach (var entry in modData.ModConfigEntries)
                 Log($"    {entry.Name} ({entry.ValueType}) = {entry.DefaultValue}");
         }
-
-        var modHandle = ValkyrieAPI.GetHandle(this);
-        modHandle.RegisterUI("Quick Mod Config", "L", () => new QuickModConfigPanel());
     }
 
     public static void Log(object message)
     {
-        File.AppendAllText(_logPath, message?.ToString() + Environment.NewLine);
+        _modHandle.Log(message);
     }
 }
