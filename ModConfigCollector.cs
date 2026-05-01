@@ -5,6 +5,7 @@ using System.Reflection;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
+using tModPorter;
 
 namespace QuickModConfig;
 
@@ -42,14 +43,7 @@ public sealed class ModConfigCollector
                     if (!prop.CanRead || !prop.CanWrite || prop.DeclaringType == typeof(ModConfig))
                         continue;
 
-                    var defaultValue = prop.GetCustomAttribute<DefaultValueAttribute>()?.Value;
-
-                    entries.Add(new ModConfigEntry
-                    {
-                        Name = prop.Name,
-                        ValueType = prop.PropertyType,
-                        DefaultValue = defaultValue
-                    });
+                    entries.Add(CreateConfigEntry(prop, prop.PropertyType));
                 }
 
                 foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
@@ -57,14 +51,7 @@ public sealed class ModConfigCollector
                     if (field.DeclaringType == typeof(ModConfig))
                         continue;
 
-                    var defaultValue = field.GetCustomAttribute<DefaultValueAttribute>()?.Value;
-
-                    entries.Add(new ModConfigEntry
-                    {
-                        Name = field.Name,
-                        ValueType = field.FieldType,
-                        DefaultValue = defaultValue
-                    });
+                    entries.Add(CreateConfigEntry(field, field.FieldType));
                 }
 
                 modData.ModConfigs.Add(new ModConfigData()
@@ -79,6 +66,38 @@ public sealed class ModConfigCollector
         }
 
         return modDataList;
+    }
+
+    private static ModConfigEntry CreateConfigEntry(MemberInfo member, Type valueType)
+    {
+        var defaultValueAttribute = member.GetCustomAttribute<DefaultValueAttribute>();
+        var rangeAttribute = member.GetCustomAttribute<RangeAttribute>();
+        var incrementAttribute = member.GetCustomAttribute<IncrementAttribute>();
+            
+        var defaultValue = defaultValueAttribute?.Value;
+        var isSlider = false;
+        float? increment = incrementAttribute != null ? Convert.ToSingle(incrementAttribute.Increment) : null;
+
+        var min = 0f;
+        var max = 0f;
+
+        if (rangeAttribute != null)
+        {
+            min = Convert.ToSingle(rangeAttribute.Min);
+            max = Convert.ToSingle(rangeAttribute.Max);
+            isSlider = true;
+        }
+
+        return new ModConfigEntry
+        {
+            Name = member.Name,
+            ValueType = valueType,
+            DefaultValue = defaultValue,
+            Min = min,
+            Max = max,
+            Increment = increment,
+            IsSlider = isSlider
+        };
     }
 }
 
