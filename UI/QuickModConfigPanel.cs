@@ -45,21 +45,7 @@ public class QuickModConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasS
         };
 
         foreach (var mod in _modData)
-        {
-            const float VerticalPadding = 5;
-            const float HorizontalPadding = 20;
-
-            var btn = new UIButton<string>(mod.ModName)
-            {
-                ScalePanel = true,
-                PaddingTop = VerticalPadding,
-                PaddingBottom = VerticalPadding,
-                PaddingLeft = HorizontalPadding,
-                PaddingRight = HorizontalPadding,
-            };
-            
-            _uiList.Add(btn);
-        }
+            _uiList.Add(new Button(mod.ModName));
 
         MainElement.Append(_uiList);
 
