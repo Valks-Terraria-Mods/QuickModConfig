@@ -1,4 +1,4 @@
-using Terraria;
+using System.Collections.Generic;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 using ValkyrieLib;
@@ -7,6 +7,8 @@ namespace QuickModConfig;
 
 public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data)
 {
+    private readonly List<UIText> _entryLabels = [];
+
     public void Select()
     {
         mainConfigPanel.MainElement.RemoveAllChildren();
@@ -51,14 +53,41 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
         entries.SetScrollbar(entriesScrollbar);
 
+        var maxLabelWidth = 0f;
+
         foreach (var entry in data.ModConfigEntries)
         {
             var entryHBox = new HBoxContainer();
+            var label = new UIText(entry.Name)
+            {
+                TextOriginX = 1f
+            };
 
-            entryHBox.Append(new UIText(entry.Name));
+            _entryLabels.Add(label);
+
+            entryHBox.Append(label);
+    
+            var minWidth = label.MinWidth.Pixels;
+
+            if (minWidth > maxLabelWidth)
+                maxLabelWidth = minWidth;
+
+            if (entry.IsSlider)
+            {
+                float min = entry.Min ?? 0f;
+                float max = entry.Max ?? 10f;
+                float value = entry.DefaultValue as float? ?? min;
+                
+                var slider = new Slider(value, min, max);
+
+                entryHBox.Append(slider);
+            }
 
             entries.Add(entryHBox);
         }
+
+        foreach (var label in _entryLabels)
+            label.Width = StyleDimension.FromPixels(maxLabelWidth);
 
         hboxEntries.Append(entries);
         hboxEntries.Append(entriesScrollbar);
