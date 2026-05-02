@@ -6,17 +6,17 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/dotnet/dotnet",
+            "program": "${env:TMOD_DIR}/dotnet/dotnet",
             "args": [
-                "${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/tModLoader.dll"
+                "${env:TMOD_DIR}/tModLoader.dll"
             ],
-            "cwd": "${env:HOME}/.local/share/Steam/steamapps/common/tModLoader",
+            "cwd": "${env:TMOD_DIR}",
             "console": "integratedTerminal",
             "stopAtEntry": false,
             "env": {
-                "LD_LIBRARY_PATH": "${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/lib64:${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/lib:${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/dotnet/shared/Microsoft.NETCore.App/8.0.0",
+                "LD_LIBRARY_PATH": "${env:TMOD_DIR}/lib64:${env:TMOD_DIR}/lib:${env:TMOD_DIR}/dotnet/shared/Microsoft.NETCore.App/8.0.0",
                 "STEAM_RUNTIME": "1",
-                "DOTNET_ROOT": "${env:HOME}/.local/share/Steam/steamapps/common/tModLoader/dotnet",
+                "DOTNET_ROOT": "${env:TMOD_DIR}/dotnet",
                 "COMPlus_ZapDisable": "1"
             },
             "justMyCode": false,
