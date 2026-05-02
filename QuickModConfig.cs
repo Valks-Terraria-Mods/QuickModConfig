@@ -27,7 +27,7 @@ public class QuickModConfig : Mod
         //     }
         // }
 
-        _modHandle.RegisterUI("Quick Mod Config", "L", () => new QuickModConfigPanel());
+        _modHandle.RegisterUI("Quick Mod Config", "L", () => new MainConfigPanel());
     }
 
     public static void Log(object message)
