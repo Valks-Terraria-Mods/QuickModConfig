@@ -32,7 +32,7 @@ public sealed class ModConfigCollector
                 if (type.IsAbstract || !typeof(ModConfig).IsAssignableFrom(type))
                     continue;
 
-                var instance = Activator.CreateInstance(type);
+                var instance = Activator.CreateInstance(type)!;
                 var config = (ModConfig)instance!;
 
                 var entries = new List<ModConfigEntry>();
@@ -57,6 +57,7 @@ public sealed class ModConfigCollector
                 {
                     ModConfigName = type.Name,
                     ConfigScope = config.Mode,
+                    ConfigType = type,
                     ModConfigEntries = entries
                 });
             }
@@ -110,6 +111,7 @@ public sealed record ModConfigData
 {
     public required string ModConfigName { get; init; }
     public required ConfigScope ConfigScope { get; init; }
+    public required Type ConfigType { get; init; }
     public required List<ModConfigEntry> ModConfigEntries { get; init; }
 }
 

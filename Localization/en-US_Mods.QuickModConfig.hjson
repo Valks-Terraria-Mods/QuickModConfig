@@ -8,5 +8,45 @@ Configs: {
 		}
 
 		DisplayName: Test Config
+
+		MyFloat: {
+			Label: My Float
+			Tooltip: ""
+		}
+
+		MyDouble: {
+			Label: My Double
+			Tooltip: ""
+		}
+
+		MyInt: {
+			Label: My Int
+			Tooltip: ""
+		}
+
+		MyLong: {
+			Label: My Long
+			Tooltip: ""
+		}
+
+		MyShort: {
+			Label: My Short
+			Tooltip: ""
+		}
+
+		MyByte: {
+			Label: My Byte
+			Tooltip: ""
+		}
+
+		MyNullableInt: {
+			Label: My Nullable Int
+			Tooltip: ""
+		}
+
+		MyBool: {
+			Label: My Bool
+			Tooltip: ""
+		}
 	}
 }

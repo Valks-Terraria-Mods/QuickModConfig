@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using Terraria;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 using Terraria.UI;
 using ValkyrieLib;
 
@@ -66,7 +70,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             _entryLabels.Add(label);
 
             entryHBox.Append(label);
-    
+
             var minWidth = label.MinWidth.Pixels;
 
             if (minWidth > maxLabelWidth)
@@ -76,9 +80,27 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             {
                 float min = entry.Min ?? 0f;
                 float max = entry.Max ?? 10f;
-                float value = entry.DefaultValue as float? ?? min;
-                
+
+                var currentEntry = entry;
+                var configInstance = GetConfigInstance(data.ConfigType);
+                var prop = configInstance.GetType().GetProperty(currentEntry.Name);
+
+                object liveValue = prop?.GetValue(configInstance)!;
+                float value = ConvertToFloat(liveValue, min);
+
                 var slider = new Slider(value, min, max);
+
+                slider.ValueChanged += (newValue) =>
+                {
+                    if (prop == null)
+                        return;
+
+                    object finalValue = ConvertToPropertyType(newValue, prop.PropertyType);
+                    prop.SetValue(configInstance, finalValue);
+
+                    // if (configInstance is ModConfig modConfig)
+                    //     modConfig.SaveChanges();
+                };
 
                 entryHBox.Append(slider);
             }
@@ -103,5 +125,55 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         vboxMain.Append(goBackBtn);
 
         return vboxMain;
+    }
+
+    private static object GetConfigInstance(Type configType)
+    {
+        var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes);
+        var generic = method!.MakeGenericMethod(configType);
+        return generic.Invoke(null, null)!;
+    }
+
+    private static float ConvertToFloat(object value, float fallback)
+    {
+        if (value == null)
+            return fallback;
+
+        // Unwrap Nullable<T>
+        Type type = value.GetType();
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            var hasValue = (bool)type.GetProperty("HasValue")!.GetValue(value)!;
+            if (!hasValue) return fallback;
+            value = type.GetProperty("Value")!.GetValue(value)!;
+        }
+
+        return value switch
+        {
+            float f => f,
+            double d => (float)d,
+            int i => i,
+            long l => l,
+            short s => s,
+            byte b => b,
+            _ => Convert.ToSingle(value)
+        };
+    }
+
+    private static object ConvertToPropertyType(float sliderValue, Type targetType)
+    {
+        Type underlying = Nullable.GetUnderlyingType(targetType)!;
+        if (underlying != null)
+            targetType = underlying;
+
+        if (targetType == typeof(float)) return sliderValue;
+        if (targetType == typeof(double)) return (double)sliderValue;
+        if (targetType == typeof(int)) return (int)Math.Round(sliderValue);
+        if (targetType == typeof(long)) return (long)Math.Round(sliderValue);
+        if (targetType == typeof(short)) return (short)Math.Round(sliderValue);
+        if (targetType == typeof(byte)) return (byte)Math.Clamp(Math.Round(sliderValue), 0, 255);
+        if (targetType == typeof(bool)) return sliderValue >= 0.5f;
+
+        return Convert.ChangeType(sliderValue, targetType);
     }
 }
