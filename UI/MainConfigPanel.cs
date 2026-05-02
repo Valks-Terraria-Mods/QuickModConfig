@@ -11,8 +11,6 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public UIElement MainElement { get; set; } = null!;
     public UIElement ScrollViewElement { get; private set; } = null!;
 
-    public event Action CloseRequested = null!;
-
     private readonly List<ModConfigDataGroup> _modData;
     private List<ModConfigsPanel> _modConfigsPanels = null!;
 
