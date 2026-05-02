@@ -12,7 +12,6 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public UIElement ScrollViewElement { get; private set; } = null!;
 
     private readonly List<ModConfigDataGroup> _modData;
-    private List<ModConfigsPanel> _modConfigsPanels = null!;
 
     private UIList _uiList = null!;
 
@@ -62,14 +61,10 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         vbox.Append(new UITitle("Mods"));
 
-        _modConfigsPanels = [];
-
         foreach (var mod in _modData)
         {
             var modBtn = new Button(mod.ModName);
             var modConfigsPanel = new ModConfigsPanel(this, mod);
-
-            _modConfigsPanels.Add(modConfigsPanel);
 
             modBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
 
