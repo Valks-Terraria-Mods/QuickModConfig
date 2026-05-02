@@ -21,6 +21,9 @@ dotnet_style_allow_multiple_blank_lines_experimental = false
 # Sort enums
 dotnet_diagnostic.RCS1154.severity = none
 
+# Null check can be simplified (sometimes this simplifies to a very long one liner in return statement reducing readability)
+dotnet_diagnostic.IDE0270.severity = none
+
 # Remove unused usings (enabled as suggestion above in CS8019)
 dotnet_diagnostic.IDE0005.severity = none
 

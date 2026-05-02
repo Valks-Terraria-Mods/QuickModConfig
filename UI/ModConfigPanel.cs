@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
@@ -77,33 +78,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
                 maxLabelWidth = minWidth;
 
             if (entry.IsSlider)
-            {
-                float min = entry.Min ?? 0f;
-                float max = entry.Max ?? 10f;
-
-                var currentEntry = entry;
-                var configInstance = GetConfigInstance(data.ConfigType);
-                var prop = configInstance.GetType().GetProperty(currentEntry.Name);
-
-                object liveValue = prop?.GetValue(configInstance)!;
-                float value = ConvertToFloat(liveValue, min);
-
-                var slider = new Slider(value, min, max);
-
-                slider.ValueChanged += (newValue) =>
-                {
-                    if (prop == null)
-                        return;
-
-                    object finalValue = ConvertToPropertyType(newValue, prop.PropertyType);
-                    prop.SetValue(configInstance, finalValue);
-
-                    // if (configInstance is ModConfig modConfig)
-                    //     modConfig.SaveChanges();
-                };
-
-                entryHBox.Append(slider);
-            }
+                CreateSlider(entry, entryHBox);
 
             entries.Add(entryHBox);
         }
@@ -127,53 +102,118 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         return vboxMain;
     }
 
-    private static object GetConfigInstance(Type configType)
+    private void CreateSlider(ModConfigEntry entry, HBoxContainer entryHBox)
     {
-        var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes);
-        var generic = method!.MakeGenericMethod(configType);
-        return generic.Invoke(null, null)!;
+        var min = entry.Min ?? 0f;
+        var max = entry.Max ?? 10f;
+
+        ModConfig config = (ModConfig)ConfigReflectionHelpers.GetConfigInstance(data.ConfigType);
+        MemberInfo member = entry.Member;
+
+        var value = ConfigReflectionHelpers.ConvertToFloat(value: ConfigReflectionHelpers.GetMemberValue(member, config), fallback: min);
+        var slider = new Slider(value, min, max);
+
+        slider.ValueChanged += (newValue) =>
+        {
+            object finalValue = ConfigReflectionHelpers.ConvertToMemberType(newValue, ConfigReflectionHelpers.GetMemberType(member));
+            ConfigReflectionHelpers.SetMemberValue(member, config, finalValue);
+            config.SaveChanges();
+        };
+
+        entryHBox.Append(slider);
     }
 
-    private static float ConvertToFloat(object value, float fallback)
+    private static class ConfigReflectionHelpers
     {
-        if (value == null)
-            return fallback;
-
-        // Unwrap Nullable<T>
-        Type type = value.GetType();
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+        /// <summary>
+        /// ModContent.GetInstance<T>() does not have a type parameter so that is why this method was created.
+        /// </summary>
+        internal static object GetConfigInstance(Type configType)
         {
-            var hasValue = (bool)type.GetProperty("HasValue")!.GetValue(value)!;
-            if (!hasValue) return fallback;
-            value = type.GetProperty("Value")!.GetValue(value)!;
+            var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes) ?? 
+                throw new InvalidOperationException("ModContent.GetInstance method not found - tModLoader API changed?");
+
+            var generic = method.MakeGenericMethod(configType);
+
+            var instance = generic.Invoke(null, null);
+
+            if (instance == null)
+                throw new InvalidOperationException($"ModContent.GetInstance<{configType.Name}>() returned null.");
+
+            return instance;
         }
 
-        return value switch
+        internal static object? GetMemberValue(MemberInfo member, object target)
         {
-            float f => f,
-            double d => (float)d,
-            int i => i,
-            long l => l,
-            short s => s,
-            byte b => b,
-            _ => Convert.ToSingle(value)
-        };
-    }
+            return member switch
+            {
+                PropertyInfo p => p.GetValue(target),
+                FieldInfo f => f.GetValue(target),
+                _ => throw new ArgumentException($"Unsupported member type: {member.MemberType}")
+            };
+        }
 
-    private static object ConvertToPropertyType(float sliderValue, Type targetType)
-    {
-        Type underlying = Nullable.GetUnderlyingType(targetType)!;
-        if (underlying != null)
-            targetType = underlying;
+        internal static void SetMemberValue(MemberInfo member, object target, object value)
+        {
+            switch (member)
+            {
+                case PropertyInfo p: p.SetValue(target, value); break;
+                case FieldInfo f: f.SetValue(target, value); break;
+                default: throw new ArgumentException($"Unsupported member type: {member.MemberType}");
+            }
+        }
 
-        if (targetType == typeof(float)) return sliderValue;
-        if (targetType == typeof(double)) return (double)sliderValue;
-        if (targetType == typeof(int)) return (int)Math.Round(sliderValue);
-        if (targetType == typeof(long)) return (long)Math.Round(sliderValue);
-        if (targetType == typeof(short)) return (short)Math.Round(sliderValue);
-        if (targetType == typeof(byte)) return (byte)Math.Clamp(Math.Round(sliderValue), 0, 255);
-        if (targetType == typeof(bool)) return sliderValue >= 0.5f;
+        internal static Type GetMemberType(MemberInfo member)
+        {
+            return member switch
+            {
+                PropertyInfo p => p.PropertyType,
+                FieldInfo f => f.FieldType,
+                _ => throw new ArgumentException($"Unsupported member type: {member.MemberType}")
+            };
+        }
 
-        return Convert.ChangeType(sliderValue, targetType);
+        internal static float ConvertToFloat(object? value, float fallback)
+        {
+            if (value == null)
+                return fallback;
+
+            // Unwrap Nullable<T>
+            Type type = value.GetType();
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                var hasValue = (bool)type.GetProperty("HasValue")!.GetValue(value)!;
+                if (!hasValue) return fallback;
+                value = type.GetProperty("Value")!.GetValue(value)!;
+            }
+
+            return value switch
+            {
+                float f => f,
+                double d => (float)d,
+                int i => i,
+                long l => l,
+                short s => s,
+                byte b => b,
+                _ => Convert.ToSingle(value)
+            };
+        }
+
+        internal static object ConvertToMemberType(float sliderValue, Type targetType)
+        {
+            Type underlying = Nullable.GetUnderlyingType(targetType)!;
+            if (underlying != null)
+                targetType = underlying;
+
+            if (targetType == typeof(float)) return sliderValue;
+            if (targetType == typeof(double)) return (double)sliderValue;
+            if (targetType == typeof(int)) return (int)Math.Round(sliderValue);
+            if (targetType == typeof(long)) return (long)Math.Round(sliderValue);
+            if (targetType == typeof(short)) return (short)Math.Round(sliderValue);
+            if (targetType == typeof(byte)) return (byte)Math.Clamp(Math.Round(sliderValue), 0, 255);
+            if (targetType == typeof(bool)) return sliderValue >= 0.5f;
+
+            return Convert.ChangeType(sliderValue, targetType);
+        }
     }
 }

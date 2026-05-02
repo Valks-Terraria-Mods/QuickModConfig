@@ -92,6 +92,7 @@ public sealed class ModConfigCollector
         {
             Name = member.Name,
             ValueType = valueType,
+            Member = member,
             DefaultValue = defaultValue,
             Min = min,
             Max = max,
@@ -119,6 +120,7 @@ public sealed record ModConfigEntry
 {
     public required string Name { get; init; }
     public required Type ValueType { get; init; }
+    public required MemberInfo Member { get; init; }
     public object? DefaultValue { get; init; }
     public float? Min { get; init; }
     public float? Max { get; init; }
