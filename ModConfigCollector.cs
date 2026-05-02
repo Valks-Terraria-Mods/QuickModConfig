@@ -5,7 +5,6 @@ using System.Reflection;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
-using tModPorter;
 
 namespace QuickModConfig;
 
@@ -14,7 +13,7 @@ public sealed class ModConfigCollector
     public static List<ModConfigDataGroup> Collect()
     {
         var modDataList = new List<ModConfigDataGroup>();
-        
+
         foreach (var mod in ModLoader.Mods)
         {
             // Check if code is null because why not
@@ -73,7 +72,7 @@ public sealed class ModConfigCollector
         var defaultValueAttribute = member.GetCustomAttribute<DefaultValueAttribute>();
         var rangeAttribute = member.GetCustomAttribute<RangeAttribute>();
         var incrementAttribute = member.GetCustomAttribute<IncrementAttribute>();
-            
+
         var defaultValue = defaultValueAttribute?.Value;
         var isSlider = false;
         float? increment = incrementAttribute != null ? Convert.ToSingle(incrementAttribute.Increment) : null;

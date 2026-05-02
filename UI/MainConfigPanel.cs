@@ -1,11 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
-using Terraria;
 using Terraria.GameContent.UI.Elements;
-using Terraria.ID;
-using Terraria.ModLoader.UI;
-using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
 using ValkyrieLib;
 
