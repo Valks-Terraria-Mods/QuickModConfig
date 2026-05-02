@@ -24,8 +24,6 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
         var title = new UITitle(modData.ModName);
 
-        title.Height = StyleDimension.FromPixels(title.Height.Pixels + 10);
-
         _content.Append(title);
 
         var uiList = new UIList()
