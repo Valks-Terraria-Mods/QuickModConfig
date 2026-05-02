@@ -4,12 +4,14 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "dotnet",
-            "args": [
-                "build",
-                "QuickModConfig.csproj"
-            ],
-            "isBackground": false
+            "command": "dotnet build *.sln",
+            "problemMatcher": []
+        },
+        {
+            "label": "format",
+            "type": "shell",
+            "command": "dotnet format *.sln --severity info",
+            "problemMatcher": []
         }
     ]
 }
