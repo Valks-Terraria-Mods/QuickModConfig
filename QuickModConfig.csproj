@@ -9,17 +9,25 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <!-- Roslynator Analyzers -->
       <PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
-    </ItemGroup>
 
-    <ItemGroup>
+      <!-- ValkyrieLib -->
       <ProjectReference Include="..\ValkyrieLib\ValkyrieLib.csproj" />
-    </ItemGroup>
 
-    <ItemGroup>
+      <!-- DragonLens -->
+      <Reference Include="DragonLens">
+        <HintPath>ModAssemblies\DragonLens.dll</HintPath>
+      </Reference>
+
+      <!-- Exclude Source -->
       <Compile Remove="Source\**\*.cs" />
+
+      <!-- Make DragonLens internal types public -->
+      <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="true" />
+      <Publicize Include="DragonLens" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
     </ItemGroup>
 </Project>

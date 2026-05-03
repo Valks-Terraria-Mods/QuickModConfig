@@ -2,6 +2,7 @@ displayName = Quick Mod Config
 author = Valkyrienyanko
 version = 0.1
 modReferences = ValkyrieLib
+weakReferences = DragonLens
 sortAfter = ValkyrieLib
 buildIgnore = Source/*
 homepage = https://discord.gg/j8HQZZ76r8

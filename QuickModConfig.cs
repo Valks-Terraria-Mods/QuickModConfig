@@ -6,17 +6,17 @@ namespace QuickModConfig;
 
 public class QuickModConfig : Mod
 {
-    private static ModHandle _modHandle = null!;
+    public static ModHandle ModHandle { get; private set; } = null!;
 
     public override void Load()
     {
-        _modHandle = ValkyrieAPI.GetHandle(this);
-        _modHandle.RegisterUI("Quick Mod Config", "L", () => new MainConfigPanel());
+        ModHandle = ValkyrieAPI.GetHandle(this);
+        ModHandle.RegisterUI("Quick Mod Config", "L", () => new MainConfigPanel());
     }
 
     public static void Log(object message)
     {
         Main.NewText(message);
-        _modHandle.Log(message);
+        ModHandle.Log(message);
     }
 }

@@ -1,1 +1,14 @@
-Quickly modify mod configs in realtime.
+All mod configs are accessible at the bottom right of the screen.
+
+There are two ways you can open this panel.
+1. Configure and use the "Quick Mod Config" keybind
+2. Add the tool with a gear icon if DragonLens mod is installed
+
+Features
+- Config panel is at bottom right of screen keeping the center of screen visible
+- The panel remembers where you left off even if you leave/re-join your world
+- Config edits are saved in realtime, no need to press a "Save Config" button
+
+Known Issues
+- Mods are showing up even if they don't have any mod configs. I will need to gray out / disable the buttons but still show them.
+- Color and List types are not supported yet
