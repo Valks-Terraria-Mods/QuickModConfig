@@ -39,9 +39,19 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
         foreach (var modConfig in modData.ModConfigs)
         {
             var modConfigBtn = new Button(modConfig.ModConfigName);
-            var modConfigPanel = new ModConfigPanel(mainConfigPanel, this, modConfig, modData.ModName);
+            bool hasEntries = modConfig.ModConfigEntries.Count > 0;
 
-            modConfigBtn.OnLeftClick += (_, _) => modConfigPanel.Select();
+            if (hasEntries)
+            {
+                var modConfigPanel = new ModConfigPanel(mainConfigPanel, this, modConfig, modData.ModName);
+                modConfigBtn.OnLeftClick += (_, _) => modConfigPanel.Select();
+            }
+            else
+            {
+                modConfigBtn.IgnoresMouseInteraction = true;
+                modConfigBtn.TextColor = Color.DarkGray;
+                modConfigBtn.BackgroundColor = Color.DimGray;
+            }
 
             uiList.Add(modConfigBtn);
         }
