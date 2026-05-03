@@ -7,17 +7,21 @@ using ValkyrieLib;
 
 namespace QuickModConfig;
 
-public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrollbar, IHasMainPanel
+public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton
 {
     public UIElement MainElement { get; set; } = null!;
-    public UIElement ScrollViewElement { get; private set; } = null!;
+
+    private const float PanelWidth = 600;
+    private const float PanelHeight = 400;
+    private const float PanelTransparency = 0.3f;
+    private const float PanelMargin = 10;
 
     private readonly List<ModConfigDataGroup> _modData;
     private UIElement? _currentContent;
     private UIList _uiList = null!;
-    private UIScrollbar? _scrollbar;
     private UIImageButton? _closeButton;
-    private bool _mainListShowing;
+    private UIScrollbar? _uiScrollbar;
+    private bool _scrollBarVisible;
 
     public MainConfigPanel()
     {
@@ -26,20 +30,43 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
     public override void OnInitialize()
     {
-        MainElement.Width = StyleDimension.FromPixels(600);
-        MainElement.Height = StyleDimension.FromPixels(400);
-        MainElement.Left = StyleDimension.FromPixels(-10);
-        MainElement.Top = StyleDimension.FromPixels(-10);
-        MainElement.HAlign = 1f;
-        MainElement.VAlign = 1f;
-
-        if (MainElement is UIPanel panel)
-            panel.BackgroundColor *= 0.3f; // Make background transparent
+        MainElement = new UIPanel()
+        {
+            Width = StyleDimension.FromPixels(PanelWidth),
+            Height = StyleDimension.FromPixels(PanelHeight),
+            BackgroundColor = ValkyrieAPI.UI.Colors.LightBackground * PanelTransparency,
+            BorderColor = ValkyrieAPI.UI.Colors.Border,
+            Left = StyleDimension.FromPixels(-PanelMargin),
+            Top = StyleDimension.FromPixels(-PanelMargin),
+            HAlign = 1f,
+            VAlign = 1f
+        };
 
         Append(MainElement);
 
         Build();
         NavigateToView(NavigationState.CurrentView);
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        base.Update(gameTime);
+
+        // Only show the scrollbar if it can actually scroll (there is enough content overflow to allow scrolling)
+        if (_uiScrollbar != null)
+        {
+            bool canScroll = _uiScrollbar.CanScroll;
+
+            if (canScroll != _scrollBarVisible)
+            {
+                if (canScroll)
+                    MainElement.Append(_uiScrollbar);
+                else
+                    _uiScrollbar.Remove();
+
+                _scrollBarVisible = canScroll;
+            }
+        }
     }
 
     public void Select()
@@ -48,45 +75,49 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         Build();
     }
 
-    public void SetContent(UIElement content)
+    public void SetContent(UIElement content, bool removeMainScrollbar = true)
     {
+        if (removeMainScrollbar)
+        {
+            _uiScrollbar?.Remove();
+            _uiScrollbar = null;
+            _scrollBarVisible = false;
+        }
+
         if (_currentContent is not null)
+        {
+            _scrollBarVisible = false;
             MainElement.RemoveChild(_currentContent);
+        }
 
         _currentContent = content;
         MainElement.Append(content);
 
-        // Remove the main scrollbar if we are not showing the mod list.
-        _mainListShowing = false;
-        if (_scrollbar is not null && MainElement.HasChild(_scrollbar))
-            MainElement.RemoveChild(_scrollbar);
-
-        EnsureCloseButtonOnTop();
-    }
-
-    public void SetScrollbar(UIScrollbar scrollbar)
-    {
-        _scrollbar = scrollbar;
-        _uiList.SetScrollbar(scrollbar);
-
-        // If not currently on the mod list, detach it now.
-        if (!_mainListShowing && MainElement.HasChild(_scrollbar))
-            MainElement.RemoveChild(_scrollbar);
+        if (_closeButton is not null)
+        {
+            _closeButton.Remove();
+            MainElement.Append(_closeButton);
+        }
     }
 
     private void Build()
     {
-        _mainListShowing = true;
-
         _uiList = new UIList()
         {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill
         };
 
-        // Reconnect the scrollbar if one was already provided, fixing the navigation-back scroll bug.
-        if (_scrollbar is not null)
-            _uiList.SetScrollbar(_scrollbar);
+        _uiScrollbar = CreateScrollBar();
+        _scrollBarVisible = true;
+
+        _uiList.SetScrollbar(_uiScrollbar);
+
+        var content = new UIElement()
+        {
+            Width = StyleDimension.Fill,
+            Height = StyleDimension.Fill
+        };
 
         var vbox = new VBoxContainer()
         {
@@ -134,12 +165,10 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         bottomRow.Append(resetAllBtn);
         vbox.Append(bottomRow);
 
-        ScrollViewElement = _uiList;
-        SetContent(vbox);
+        content.Append(vbox);
+        content.Append(_uiScrollbar);
 
-        // Reattach the scrollbar now that we're on the mod list.
-        if (_scrollbar is not null && !MainElement.HasChild(_scrollbar))
-            MainElement.Append(_scrollbar);
+        SetContent(content, removeMainScrollbar: false);
     }
 
     private void NavigateToView(NavigationState.View view)
@@ -173,12 +202,21 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public void SetCloseButton(UIImageButton button)
     {
         _closeButton = button;
-        EnsureCloseButtonOnTop();
+        MainElement.Append(_closeButton);
     }
 
-    private void EnsureCloseButtonOnTop()
+    private static UIScrollbar CreateScrollBar()
     {
-        if (_closeButton != null)
-            MainElement.Append(_closeButton);
+        const float ScrollBarTopInset = 27f;
+        const float ScrollBarBottomInset = 3;
+        const float ScrollBarLeftInset = 5;
+
+        return new UIScrollbar()
+        {
+            Height = StyleDimension.FromPixelsAndPercent(-ScrollBarTopInset - ScrollBarBottomInset, 1f),
+            Top = StyleDimension.FromPixels(ScrollBarTopInset),
+            Left = StyleDimension.FromPixels(ScrollBarLeftInset),
+            HAlign = 1f
+        };
     }
 }
