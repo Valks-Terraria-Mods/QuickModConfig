@@ -1,87 +1,50 @@
-using Microsoft.Xna.Framework;
 using Terraria.GameContent.UI.Elements;
-using Terraria.ModLoader.Config;
 using Terraria.UI;
 using ValkyrieLib;
 
 namespace QuickModConfig;
 
-public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup modData)
+internal sealed class ModConfigsPanel(ConfigPanelNavigator navigator, ModConfigDataGroup modData)
 {
-    public void Select()
+    public UIElement Build()
     {
-        NavigationState.CurrentView = NavigationState.View.ModConfigs;
-        NavigationState.CurrentModName = modData.ModName;
-        NavigationState.CurrentConfigName = null;
-        mainConfigPanel.SetContent(Build());
-    }
-
-    private VBoxContainer Build()
-    {
-        var content = new VBoxContainer();
-        var title = new UITitle(modData.ModName);
-
-        content.Append(title);
-
-        var uiList = new UIList()
+        var content = new VBoxContainer
         {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill
         };
 
-        var scrollbar = new UIScrollbar()
-        {
-            Height = StyleDimension.Fill
-        };
-
-        uiList.SetScrollbar(scrollbar);
-
-        foreach (var modConfig in modData.ModConfigs)
-        {
-            var modConfigBtn = new Button(modConfig.ModConfigName);
-            bool hasEntries = modConfig.ModConfigEntries.Count > 0;
-
-            if (hasEntries)
-            {
-                var modConfigPanel = new ModConfigPanel(mainConfigPanel, this, modConfig, modData.ModName);
-                modConfigBtn.OnLeftClick += (_, _) => modConfigPanel.Select();
-            }
-            else
-            {
-                modConfigBtn.IgnoresMouseInteraction = true;
-                modConfigBtn.TextColor = Color.DarkGray;
-                modConfigBtn.BackgroundColor = Color.DimGray;
-            }
-
-            uiList.Add(modConfigBtn);
-        }
-
-        content.Append(uiList);
-
-        var bottomRow = new HBoxContainer
-        {
-            VAlign = 1f,
-            HAlign = 0f
-        };
-
-        var resetAllBtn = new ResetButton("Reset Configs");
-
-        resetAllBtn.OnLeftClick += (_, _) =>
-        {
-            ConfigResetter.ResetConfigs(modData.ModConfigs);
-            Select();
-        };
-
-        var modsBtn = new Button("Mods")
-        {
-            VAlign = 1f
-        };
-        modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
-        bottomRow.Append(modsBtn);
-        bottomRow.Append(resetAllBtn);
-
-        content.Append(bottomRow);
+        content.Append(new UITitle(modData.ModName));
+        content.Append(BuildConfigList());
+        content.Append(PanelControls.CreateFooter(
+            PanelControls.CreateButton("Mods", navigator.ShowMods),
+            PanelControls.CreateResetButton("Reset Configs", ResetConfigs)));
 
         return content;
+    }
+
+    private ScrollableList BuildConfigList()
+    {
+        var list = new ScrollableList();
+
+        foreach (var config in modData.ModConfigs)
+            list.Add(BuildConfigButton(config));
+
+        return list;
+    }
+
+    private UIElement BuildConfigButton(ModConfigData config)
+    {
+        if (config.ModConfigEntries.Count == 0)
+            return PanelControls.CreateDisabledButton(config.ModConfigName);
+
+        return PanelControls.CreateButton(config.ModConfigName, () => navigator.ShowConfig(modData, config));
+    }
+
+    private void ResetConfigs()
+    {
+        ConfigResetter.ResetConfigs(modData.ModConfigs);
+
+        navigator.ShowModConfigs(modData);
     }
 }
