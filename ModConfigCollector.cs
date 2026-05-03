@@ -81,11 +81,30 @@ public sealed class ModConfigCollector
         var min = 0f;
         var max = 0f;
 
-        if (rangeAttribute != null)
+        ConfigEntryUIType uiType;
+
+        if (rangeAttribute != null && IsNumericType(valueType))
         {
+            isSlider = true;
             min = Convert.ToSingle(rangeAttribute.Min);
             max = Convert.ToSingle(rangeAttribute.Max);
-            isSlider = true;
+            uiType = ConfigEntryUIType.Slider;
+        }
+        else if (valueType == typeof(string))
+        {
+            uiType = ConfigEntryUIType.TextInput;
+        }
+        else if (valueType == typeof(bool))
+        {
+            uiType = ConfigEntryUIType.Boolean;
+        }
+        else if (valueType.IsEnum)
+        {
+            uiType = ConfigEntryUIType.EnumDropdown;
+        }
+        else
+        {
+            uiType = ConfigEntryUIType.NotSupported;
         }
 
         return new ModConfigEntry
@@ -93,12 +112,20 @@ public sealed class ModConfigCollector
             Name = member.Name,
             ValueType = valueType,
             Member = member,
+            UIType = uiType,
             DefaultValue = defaultValue,
             Min = min,
             Max = max,
             Increment = increment,
             IsSlider = isSlider
         };
+    }
+
+    private static bool IsNumericType(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        return type == typeof(int) || type == typeof(float) || type == typeof(double)
+            || type == typeof(long) || type == typeof(short) || type == typeof(byte);
     }
 }
 
@@ -121,9 +148,19 @@ public sealed record ModConfigEntry
     public required string Name { get; init; }
     public required Type ValueType { get; init; }
     public required MemberInfo Member { get; init; }
+    public required ConfigEntryUIType UIType { get; init; }
     public object? DefaultValue { get; init; }
     public float? Min { get; init; }
     public float? Max { get; init; }
     public float? Increment { get; init; }
     public bool IsSlider { get; init; }
+}
+
+public enum ConfigEntryUIType
+{
+    Slider,
+    TextInput,
+    Boolean,
+    EnumDropdown,
+    NotSupported
 }

@@ -1,3 +1,4 @@
+using Terraria;
 using Terraria.ModLoader;
 using ValkyrieLib;
 
@@ -29,6 +30,7 @@ public class QuickModConfig : Mod
 
     public static void Log(object message)
     {
+        Main.NewText(message);
         _modHandle.Log(message);
     }
 }

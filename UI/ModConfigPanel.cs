@@ -12,15 +12,20 @@ namespace QuickModConfig;
 
 public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data)
 {
-    private readonly List<UIText> _entryLabels = [];
+    private readonly List<ConfigRow> _configRows = [];
 
     public void Select()
     {
-        mainConfigPanel.MainElement.RemoveAllChildren();
-        mainConfigPanel.MainElement.Append(Build());
+        VBoxContainer? content = Build();
+
+        if (content != null)
+        {
+            mainConfigPanel.MainElement.RemoveAllChildren();
+            mainConfigPanel.MainElement.Append(content);
+        }
     }
 
-    private VBoxContainer Build()
+    private VBoxContainer? Build()
     {
         var vboxMain = new VBoxContainer();
 
@@ -31,7 +36,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         var title = new UITitle(data.ModConfigName);
         var scope = new UIText($"({data.ConfigScope})", textScale: 0.7f)
         {
-            TextOriginY = 0.5f,
+            TextOriginY = 0.25f,
             Height = StyleDimension.Fill
         };
 
@@ -58,33 +63,130 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
         entries.SetScrollbar(entriesScrollbar);
 
-        var maxLabelWidth = 0f;
+        var maxLabelNameWidth = 0f;
+        var maxFeedbackNameWidth = 0f;
+
+        if (ConfigReflectionHelpers.GetConfigInstance(data.ConfigType) is not ModConfig config)
+            return null;
 
         foreach (var entry in data.ModConfigEntries)
         {
             var entryHBox = new HBoxContainer();
-            var label = new UIText(entry.Name)
+            var nameLabel = new UIText(entry.Name) { TextOriginX = 1f };
+            nameLabel.Recalculate();
+            entryHBox.Append(nameLabel);
+
+            var minNameWidth = nameLabel.MinWidth.Pixels;
+            if (minNameWidth > maxLabelNameWidth) maxLabelNameWidth = minNameWidth;
+
+            var resetBtn = ValkyrieAPI.UI.Assets.SearchCancelButton;
+            UIText? feedbackLabel = null;
+
+            switch (entry.UIType)
             {
-                TextOriginX = 1f
-            };
+                case ConfigEntryUIType.Slider:
+                {
+                    var member = entry.Member;
+                    float min = entry.Min ?? 0f;
+                    float max = entry.Max ?? 10f;
+                    float defaultVal = ConfigReflectionHelpers.ConvertToFloat(entry.DefaultValue, 0f);
+                    float currentVal = ConfigReflectionHelpers.ConvertToFloat(
+                        ConfigReflectionHelpers.GetMemberValue(member, config), defaultVal);
 
-            _entryLabels.Add(label);
+                    feedbackLabel = new UIText(currentVal.ToString("0.##"));
+                    var slider = CreateSlider(config, member, currentVal, min, max, feedbackLabel);
 
-            entryHBox.Append(label);
+                    resetBtn.OnLeftClick += (_, _) =>
+                    {
+                        slider.SetValue(defaultVal, notify: true);
+                        config.SaveChanges();
+                    };
 
-            var minWidth = label.MinWidth.Pixels;
+                    entryHBox.Append(slider);
+                    entryHBox.Append(feedbackLabel);
 
-            if (minWidth > maxLabelWidth)
-                maxLabelWidth = minWidth;
+                    var minFeedbackWidth = feedbackLabel.MinWidth.Pixels;
+                    if (minFeedbackWidth > maxFeedbackNameWidth) maxFeedbackNameWidth = minFeedbackWidth;
+                    break;
+                }
 
-            if (entry.IsSlider)
-                CreateSlider(entry, entryHBox);
+                case ConfigEntryUIType.TextInput:
+                {
+                    var member = entry.Member;
+                    string strValue = ConfigReflectionHelpers.GetMemberValue(member, config)?.ToString() ?? "";
 
+                    var inputField = new InputField("", strValue)
+                    {
+                        MaxLength = int.MaxValue
+                    };
+
+                    inputField.ValueChanged += newStr =>
+                    {
+                        ConfigReflectionHelpers.SetMemberValue(member, config, newStr);
+                        config.SaveChanges();
+                    };
+
+                    resetBtn.OnLeftClick += (_, _) =>
+                    {
+                        ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? "");
+                        config.SaveChanges();
+                    };
+
+                    entryHBox.Append(inputField);
+                    break;
+                }
+
+                case ConfigEntryUIType.Boolean:
+                {
+                    var member = entry.Member;
+                    bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
+                    var boolBtn = new Button(current ? "On" : "Off");
+
+                    boolBtn.OnLeftClick += (_, _) =>
+                    {
+                        bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
+                        ConfigReflectionHelpers.SetMemberValue(member, config, !current);
+                        boolBtn.SetText(!current ? "On" : "Off");
+                        config.SaveChanges();
+                    };
+
+                    resetBtn.OnLeftClick += (_, _) =>
+                    {
+                        ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? false);
+                        config.SaveChanges();
+                    };
+
+                    entryHBox.Append(boolBtn);
+                    break;
+                }
+
+                case ConfigEntryUIType.EnumDropdown:
+                case ConfigEntryUIType.NotSupported:
+                    entryHBox.Append(new UIText($"[{entry.Member.GetType().Name} not implemented]"));
+                    break;
+
+                default:
+                    Main.NewText($"Unexpected UIType: {entry.UIType}");
+                    break;
+            }
+
+            _configRows.Add(new ConfigRow()
+            {
+                NameLabel = nameLabel,
+                FeedbackLabel = feedbackLabel
+            });
+
+            entryHBox.Append(resetBtn);
             entries.Add(entryHBox);
         }
 
-        foreach (var label in _entryLabels)
-            label.Width = StyleDimension.FromPixels(maxLabelWidth);
+        foreach (var configRow in _configRows)
+        {
+            configRow.NameLabel.Width = StyleDimension.FromPixels(maxLabelNameWidth);
+
+            if (configRow.FeedbackLabel is not null)
+                configRow.FeedbackLabel.Width = StyleDimension.FromPixels(maxFeedbackNameWidth + 5);
+        }
 
         hboxEntries.Append(entries);
         hboxEntries.Append(entriesScrollbar);
@@ -102,25 +204,25 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         return vboxMain;
     }
 
-    private void CreateSlider(ModConfigEntry entry, HBoxContainer entryHBox)
+    private static Slider CreateSlider(ModConfig config, MemberInfo memberInfo, float value, float min, float max, UIText valueFeedback)
     {
-        var min = entry.Min ?? 0f;
-        var max = entry.Max ?? 10f;
-
-        ModConfig config = (ModConfig)ConfigReflectionHelpers.GetConfigInstance(data.ConfigType);
-        MemberInfo member = entry.Member;
-
-        var value = ConfigReflectionHelpers.ConvertToFloat(value: ConfigReflectionHelpers.GetMemberValue(member, config), fallback: min);
         var slider = new Slider(value, min, max);
 
         slider.ValueChanged += (newValue) =>
         {
-            object finalValue = ConfigReflectionHelpers.ConvertToMemberType(newValue, ConfigReflectionHelpers.GetMemberType(member));
-            ConfigReflectionHelpers.SetMemberValue(member, config, finalValue);
+            Type? memberType = ConfigReflectionHelpers.GetMemberType(memberInfo);
+
+            if (memberType == null)
+                return;
+
+            object finalValue = ConfigReflectionHelpers.ConvertToMemberType(newValue, memberType);
+            float displayValue = ConfigReflectionHelpers.ConvertToFloat(finalValue, 0f);
+            valueFeedback.SetText(displayValue.ToString("0.##"));
+            ConfigReflectionHelpers.SetMemberValue(memberInfo, config, finalValue);
             config.SaveChanges();
         };
 
-        entryHBox.Append(slider);
+        return slider;
     }
 
     private static class ConfigReflectionHelpers
@@ -128,29 +230,39 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         /// <summary>
         /// ModContent.GetInstance<T>() does not have a type parameter so that is why this method was created.
         /// </summary>
-        internal static object GetConfigInstance(Type configType)
+        internal static object? GetConfigInstance(Type configType)
         {
-            var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes) ?? 
-                throw new InvalidOperationException("ModContent.GetInstance method not found - tModLoader API changed?");
+            var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes);
+
+            if (method == null)
+            {
+                QuickModConfig.Log("ModContent.GetInstance method not found - tModLoader API changed?");
+                return null;
+            }
 
             var generic = method.MakeGenericMethod(configType);
 
             var instance = generic.Invoke(null, null);
 
             if (instance == null)
-                throw new InvalidOperationException($"ModContent.GetInstance<{configType.Name}>() returned null.");
+            {
+                QuickModConfig.Log($"ModContent.GetInstance<{configType.Name}>() returned null.");
+                return null;
+            }
 
             return instance;
         }
 
         internal static object? GetMemberValue(MemberInfo member, object target)
         {
-            return member switch
+            switch (member)
             {
-                PropertyInfo p => p.GetValue(target),
-                FieldInfo f => f.GetValue(target),
-                _ => throw new ArgumentException($"Unsupported member type: {member.MemberType}")
-            };
+                case PropertyInfo p: return p.GetValue(target);
+                case FieldInfo f:    return f.GetValue(target);
+                default:
+                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
+                    return null;
+            }
         }
 
         internal static void SetMemberValue(MemberInfo member, object target, object value)
@@ -159,18 +271,24 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             {
                 case PropertyInfo p: p.SetValue(target, value); break;
                 case FieldInfo f: f.SetValue(target, value); break;
-                default: throw new ArgumentException($"Unsupported member type: {member.MemberType}");
+                default: 
+                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
+                    break;
             }
         }
 
-        internal static Type GetMemberType(MemberInfo member)
+        internal static Type? GetMemberType(MemberInfo member)
         {
-            return member switch
+            switch (member)
             {
-                PropertyInfo p => p.PropertyType,
-                FieldInfo f => f.FieldType,
-                _ => throw new ArgumentException($"Unsupported member type: {member.MemberType}")
-            };
+                case PropertyInfo p:
+                    return p.PropertyType;
+                case FieldInfo f:
+                    return f.FieldType;
+                default:
+                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
+                    return null;
+            }
         }
 
         internal static float ConvertToFloat(object? value, float fallback)
@@ -215,5 +333,11 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
             return Convert.ChangeType(sliderValue, targetType);
         }
+    }
+
+    private sealed record ConfigRow
+    {
+        internal required UIText NameLabel { get; init; }
+        internal UIText? FeedbackLabel { get; init; }
     }
 }
