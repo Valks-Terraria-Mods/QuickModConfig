@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using Terraria.ModLoader.Config;
 
 namespace QuickModConfig;
@@ -38,10 +40,14 @@ public sealed class TestConfig : ModConfig
     [DefaultValue((byte)128)]
     public byte MyByte { get; set; } = 128;
 
-    [Range(0, 100)]
-    [Increment(1f)]
-    [DefaultValue(null)]
-    public int? MyNullableInt { get; set; } = 50;
+    public List<string> MyStringList { get; set; } = new List<string>()
+    {
+        { "Apple" },
+        { "Banana" },
+        { "Cherry" }
+    };
+
+    public Color MyColor { get; set; } = Color.Red;
 
     [DefaultValue(true)]
     public bool MyBool { get; set; } = true;

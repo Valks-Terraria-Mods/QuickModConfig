@@ -67,6 +67,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         _currentContent = content;
         MainElement.Append(content);
+        EnsureCloseButtonOnTop();
     }
 
     public void SetScrollbar(UIScrollbar scrollbar)
@@ -121,5 +122,19 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         ScrollViewElement = _uiList;
         SetContent(vbox);
+    }
+
+    private UIImageButton? _closeButton;
+
+    public void SetCloseButton(UIImageButton button)
+    {
+        _closeButton = button;
+        EnsureCloseButtonOnTop();
+    }
+
+    private void EnsureCloseButtonOnTop()
+    {
+        if (_closeButton != null)
+            MainElement.Append(_closeButton);
     }
 }

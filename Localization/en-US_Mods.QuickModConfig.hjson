@@ -48,5 +48,15 @@ Configs: {
 			Label: My Bool
 			Tooltip: ""
 		}
+
+		MyStringList: {
+			Label: My String List
+			Tooltip: ""
+		}
+
+		MyColor: {
+			Label: My Color
+			Tooltip: ""
+		}
 	}
 }
