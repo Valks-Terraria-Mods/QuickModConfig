@@ -150,11 +150,13 @@ public partial class ModConfigPanel
                 config.SaveChanges();
             };
 
-            WireResetButton(resetBtn, () =>
+            resetBtn.OnLeftClick += (_, _) =>
             {
-                Reflection.SetMemberValue(member, config, entry.DefaultValue ?? false);
+                bool defaultBool = (bool)(entry.DefaultValue ?? false);
+                Reflection.SetMemberValue(member, config, defaultBool);
+                boolBtn.SetText(defaultBool ? BooleanTrue : BooleanFalse);
                 config.SaveChanges();
-            });
+            };
 
             entryHBox.Append(boolBtn);
             return null;
