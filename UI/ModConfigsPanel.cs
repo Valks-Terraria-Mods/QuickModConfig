@@ -10,6 +10,9 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 {
     public void Select()
     {
+        NavigationState.CurrentView = NavigationState.View.ModConfigs;
+        NavigationState.CurrentModName = modData.ModName;
+        NavigationState.CurrentConfigName = null;
         mainConfigPanel.SetContent(Build());
     }
 

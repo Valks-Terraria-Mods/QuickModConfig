@@ -15,9 +15,13 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
     public void Select()
     {
         VBoxContainer? content = Build();
-
         if (content != null)
+        {
+            NavigationState.CurrentView = NavigationState.View.Config;
+            NavigationState.CurrentModName = modName;
+            NavigationState.CurrentConfigName = data.ModConfigName;
             mainConfigPanel.SetContent(content);
+        }
     }
 
     private VBoxContainer? Build()

@@ -33,10 +33,30 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         Append(MainElement);
 
         Build();
+
+        switch (NavigationState.CurrentView)
+        {
+            case NavigationState.View.ModConfigs:
+                var modGroup = _modData.Find(m => m.ModName == NavigationState.CurrentModName);
+                if (modGroup != null)
+                    new ModConfigsPanel(this, modGroup).Select();
+                break;
+
+            case NavigationState.View.Config:
+                modGroup = _modData.Find(m => m.ModName == NavigationState.CurrentModName);
+                if (modGroup != null)
+                {
+                    var configData = modGroup.ModConfigs.Find(c => c.ModConfigName == NavigationState.CurrentConfigName);
+                    if (configData != null)
+                        new ModConfigPanel(this, new ModConfigsPanel(this, modGroup), configData, modGroup.ModName).Select();
+                }
+                break;
+        }
     }
 
     public void Select()
     {
+        NavigationState.CurrentView = NavigationState.View.Mods;
         Build();
     }
 
