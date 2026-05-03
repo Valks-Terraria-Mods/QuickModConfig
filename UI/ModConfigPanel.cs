@@ -74,7 +74,8 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             var nameLabel = new UIText(entry.Name) { TextOriginX = 1f };
             entryHBox.Append(nameLabel);
 
-            var nameSpacer = new UIElement() {
+            var nameSpacer = new UIElement()
+            {
                 Width = StyleDimension.FromPixels(SpaceAfterName)
             };
 
@@ -84,115 +85,24 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             if (minNameWidth > maxLabelNameWidth) maxLabelNameWidth = minNameWidth;
 
             var resetBtn = ValkyrieAPI.UI.Assets.SearchCancelButton;
-            UIText? feedbackLabel = null;
 
-            switch (entry.UIType)
+            UIText? feedbackLabel = entry.UIType switch
             {
-                case ConfigEntryUIType.Slider:
-                {
-                    var member = entry.Member;
-                    float min = entry.Min ?? 0f;
-                    float max = entry.Max ?? 10f;
-                    float defaultVal = ConfigReflectionHelpers.ConvertToFloat(entry.DefaultValue, 0f);
-                    float currentVal = ConfigReflectionHelpers.ConvertToFloat(
-                        ConfigReflectionHelpers.GetMemberValue(member, config), defaultVal);
+                ConfigEntryUIType.Slider => BuildSliderEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.TextInput => BuildTextInputEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.Boolean => BuildBooleanEntry(entryHBox, config, entry, resetBtn),
 
-                    feedbackLabel = new UIText(currentVal.ToString("0.##"));
-                    var slider = CreateSlider(config, member, currentVal, min, max, feedbackLabel);
+                // TODO: Implement these types.
+                ConfigEntryUIType.EnumDropdown or
+                ConfigEntryUIType.NotSupported => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: false),
 
-                    resetBtn.OnLeftClick += (_, _) =>
-                    {
-                        slider.SetValue(defaultVal, notify: true);
-                        config.SaveChanges();
-                    };
+                _ => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: true),
+            };
 
-                    entryHBox.Append(slider);
-                    entryHBox.Append(feedbackLabel);
-
-                    var minFeedbackWidth = feedbackLabel.MinWidth.Pixels;
-                    if (minFeedbackWidth > maxFeedbackNameWidth) maxFeedbackNameWidth = minFeedbackWidth;
-                    break;
-                }
-
-                case ConfigEntryUIType.TextInput:
-                {
-                    var member = entry.Member;
-                    string strValue = ConfigReflectionHelpers.GetMemberValue(member, config)?.ToString() ?? "";
-
-                    var inputField = new InputField("", strValue)
-                    {
-                        MaxLength = int.MaxValue
-                    };
-
-                    inputField.ValueChanged += newStr =>
-                    {
-                        ConfigReflectionHelpers.SetMemberValue(member, config, newStr);
-                        config.SaveChanges();
-                    };
-
-                    resetBtn.OnLeftClick += (_, _) =>
-                    {
-                        ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? "");
-                        config.SaveChanges();
-                    };
-
-                    entryHBox.Append(inputField);
-                    break;
-                }
-
-                case ConfigEntryUIType.Boolean:
-                {
-                    const float HorizontalBooleanPadding = 15;
-                    const string BooleanTrue = "On";
-                    const string BooleanFalse = "Off";
-
-                    var member = entry.Member;
-                    bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
-                    
-                    var spacingElement = new UIElement()
-                    {
-                        Width = StyleDimension.Fill,
-                        Height = StyleDimension.Fill
-                    };
-                    
-                    var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
-                    {
-                        PaddingLeft = HorizontalBooleanPadding,
-                        PaddingRight = HorizontalBooleanPadding,
-                    };
-
-                    boolBtn.OnLeftClick += (_, _) =>
-                    {
-                        bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
-                        ConfigReflectionHelpers.SetMemberValue(member, config, !current);
-                        boolBtn.SetText(!current ? BooleanTrue : BooleanFalse);
-                        config.SaveChanges();
-                    };
-
-                    resetBtn.OnLeftClick += (_, _) =>
-                    {
-                        ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? false);
-                        config.SaveChanges();
-                    };
-
-                    spacingElement.Append(boolBtn);
-                    entryHBox.Append(spacingElement);
-                    break;
-                }
-
-                case ConfigEntryUIType.EnumDropdown:
-                case ConfigEntryUIType.NotSupported:
-                    // TODO: Implement these types
-                    entryHBox.Append(new UIText($"[{entry.Member.GetType().Name}]")
-                    {
-                        TextOriginX = 0,
-                        Width = StyleDimension.Fill,
-                    });
-                    break;
-
-                default:
-                    QuickModConfig.Log($"Unexpected UIType: {entry.UIType}");
-                    break;
+            if (feedbackLabel != null)
+            {
+                var minFeedbackWidth = feedbackLabel.MinWidth.Pixels;
+                if (minFeedbackWidth > maxFeedbackNameWidth) maxFeedbackNameWidth = minFeedbackWidth;
             }
 
             configRows.Add(new ConfigRow()
@@ -227,6 +137,114 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         vboxMain.Append(goBackBtn);
 
         return vboxMain;
+    }
+
+    private static UIText? BuildSliderEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
+    {
+        var member = entry.Member;
+        float min = entry.Min ?? 0f;
+        float max = entry.Max ?? 10f;
+        float defaultVal = ConfigReflectionHelpers.ConvertToFloat(entry.DefaultValue, 0f);
+        float currentVal = ConfigReflectionHelpers.ConvertToFloat(
+            ConfigReflectionHelpers.GetMemberValue(member, config), defaultVal);
+
+        var feedbackLabel = new UIText(currentVal.ToString("0.##"));
+        var slider = CreateSlider(config, member, currentVal, min, max, feedbackLabel);
+
+        WireResetButton(resetBtn, () => slider.SetValue(defaultVal, notify: true));
+
+        entryHBox.Append(slider);
+        entryHBox.Append(feedbackLabel);
+
+        return feedbackLabel;
+    }
+
+    private static UIText? BuildTextInputEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
+    {
+        var member = entry.Member;
+        string strValue = ConfigReflectionHelpers.GetMemberValue(member, config)?.ToString() ?? "";
+
+        var inputField = new InputField("", strValue)
+        {
+            MaxLength = int.MaxValue
+        };
+
+        inputField.ValueChanged += newStr =>
+        {
+            ConfigReflectionHelpers.SetMemberValue(member, config, newStr);
+            config.SaveChanges();
+        };
+
+        WireResetButton(resetBtn, () =>
+        {
+            ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? "");
+            config.SaveChanges();
+        });
+
+        entryHBox.Append(inputField);
+        return null;
+    }
+
+    private static UIText? BuildBooleanEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
+    {
+        const float HorizontalBooleanPadding = 15;
+        const string BooleanTrue = "On";
+        const string BooleanFalse = "Off";
+
+        var member = entry.Member;
+        bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
+
+        var spacingElement = new UIElement()
+        {
+            Width = StyleDimension.Fill,
+            Height = StyleDimension.Fill
+        };
+
+        var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
+        {
+            PaddingLeft = HorizontalBooleanPadding,
+            PaddingRight = HorizontalBooleanPadding,
+        };
+
+        boolBtn.OnLeftClick += (_, _) =>
+        {
+            bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
+            ConfigReflectionHelpers.SetMemberValue(member, config, !current);
+            boolBtn.SetText(!current ? BooleanTrue : BooleanFalse);
+            config.SaveChanges();
+        };
+
+        WireResetButton(resetBtn, () =>
+        {
+            ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? false);
+            config.SaveChanges();
+        });
+
+        spacingElement.Append(boolBtn);
+        entryHBox.Append(spacingElement);
+        return null;
+    }
+
+    private static UIText? BuildUnsupportedEntry(HBoxContainer entryHBox, ModConfigEntry entry, bool logUnexpected)
+    {
+        if (logUnexpected)
+        {
+            QuickModConfig.Log($"Unexpected UIType: {entry.UIType}");
+            return null;
+        }
+
+        entryHBox.Append(new UIText($"[{entry.Member.GetType().Name}]")
+        {
+            TextOriginX = 0,
+            Width = StyleDimension.Fill,
+        });
+
+        return null;
+    }
+
+    private static void WireResetButton(UIImageButton resetBtn, Action resetAction)
+    {
+        resetBtn.OnLeftClick += (_, _) => resetAction();
     }
 
     private static Slider CreateSlider(ModConfig config, MemberInfo memberInfo, float value, float min, float max, UIText valueFeedback)
@@ -283,7 +301,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             switch (member)
             {
                 case PropertyInfo p: return p.GetValue(target);
-                case FieldInfo f:    return f.GetValue(target);
+                case FieldInfo f: return f.GetValue(target);
                 default:
                     QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
                     return null;
@@ -296,7 +314,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             {
                 case PropertyInfo p: p.SetValue(target, value); break;
                 case FieldInfo f: f.SetValue(target, value); break;
-                default: 
+                default:
                     QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
                     break;
             }
