@@ -91,9 +91,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
                 ConfigEntryUIType.Slider => BuildSliderEntry(entryHBox, config, entry, resetBtn),
                 ConfigEntryUIType.TextInput => BuildTextInputEntry(entryHBox, config, entry, resetBtn),
                 ConfigEntryUIType.Boolean => BuildBooleanEntry(entryHBox, config, entry, resetBtn),
-
-                // TODO: Implement these types.
-                ConfigEntryUIType.EnumDropdown or
+                ConfigEntryUIType.EnumDropdown => BuildEnumDropdownEntry(entryHBox, config, entry, resetBtn),
                 ConfigEntryUIType.NotSupported => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: false),
 
                 _ => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: true),
@@ -139,6 +137,76 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         return vboxMain;
     }
 
+    private static UIText? BuildEnumDropdownEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
+    {
+        var member = entry.Member;
+        Type valueType = ConfigReflectionHelpers.GetMemberType(member)!;
+
+        if (valueType is null)
+            return null;
+
+        Type underlying = Nullable.GetUnderlyingType(valueType)!;
+        Type enumType = underlying ?? valueType;
+        Type structType = underlying is not null ? typeof(Nullable<>).MakeGenericType(enumType) : enumType;
+        Type dropdownType = typeof(Dropdown<>).MakeGenericType(structType);
+
+        object currentVal = ConfigReflectionHelpers.GetMemberValue(member, config)!;
+
+        object initialDropdownValue;
+
+        if (underlying is not null)
+        {
+            initialDropdownValue = currentVal is null ? Activator.CreateInstance(structType)! : Activator.CreateInstance(structType, currentVal)!;
+        }
+        else
+        {
+            initialDropdownValue = currentVal ?? Activator.CreateInstance(enumType)!;
+        }
+
+        Action<object> callback = selected =>
+        {
+            object converted;
+            if (underlying is not null)
+            {
+                bool hasValue = (bool)structType.GetProperty("HasValue")!.GetValue(selected)!;
+                converted = hasValue
+                    ? structType.GetProperty("Value")!.GetValue(selected)!
+                    : null!;
+            }
+            else
+            {
+                converted = selected;
+            }
+
+            ConfigReflectionHelpers.SetMemberValue(member, config, converted);
+            config.SaveChanges();
+        };
+
+        object dropdownObj = Activator.CreateInstance(dropdownType, initialDropdownValue, callback)!;
+        entryHBox.Append((UIElement)dropdownObj);
+
+        resetBtn.OnLeftClick += (_, _) =>
+        {
+            object? defaultVal = entry.DefaultValue;
+            object defaultForDropdown;
+
+            if (underlying is not null)
+            {
+                defaultForDropdown = defaultVal is null ? Activator.CreateInstance(structType)! : Activator.CreateInstance(structType, defaultVal)!;
+            }
+            else
+            {
+                defaultForDropdown = defaultVal ?? Activator.CreateInstance(enumType)!;
+            }
+
+            var setValueMethod = dropdownType.GetMethod("SetValue", [structType, typeof(bool)]);
+            
+            setValueMethod!.Invoke(dropdownObj, [defaultForDropdown, true]);
+        };
+
+        return null;
+    }
+
     private static UIText? BuildSliderEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
     {
         var member = entry.Member;
@@ -164,7 +232,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         var member = entry.Member;
         string strValue = ConfigReflectionHelpers.GetMemberValue(member, config)?.ToString() ?? "";
 
-        var inputField = new InputField("", strValue)
+        var inputField = new InputField(strValue)
         {
             MaxLength = int.MaxValue
         };
