@@ -15,7 +15,9 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     private readonly List<ModConfigDataGroup> _modData;
     private UIElement? _currentContent;
     private UIList _uiList = null!;
+    private UIScrollbar? _scrollbar;
     private UIImageButton? _closeButton;
+    private bool _mainListShowing;
 
     public MainConfigPanel()
     {
@@ -50,21 +52,38 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         _currentContent = content;
         MainElement.Append(content);
+
+        // Remove the main scrollbar if we are not showing the mod list.
+        _mainListShowing = false;
+        if (_scrollbar is not null && MainElement.HasChild(_scrollbar))
+            MainElement.RemoveChild(_scrollbar);
+
         EnsureCloseButtonOnTop();
     }
 
     public void SetScrollbar(UIScrollbar scrollbar)
     {
+        _scrollbar = scrollbar;
         _uiList.SetScrollbar(scrollbar);
+
+        // If not currently on the mod list, detach it now.
+        if (!_mainListShowing && MainElement.HasChild(_scrollbar))
+            MainElement.RemoveChild(_scrollbar);
     }
 
     private void Build()
     {
+        _mainListShowing = true;
+
         _uiList = new UIList()
         {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill
         };
+
+        // Reconnect the scrollbar if one was already provided, fixing the navigation-back scroll bug.
+        if (_scrollbar is not null)
+            _uiList.SetScrollbar(_scrollbar);
 
         var vbox = new VBoxContainer()
         {
@@ -114,6 +133,10 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         ScrollViewElement = _uiList;
         SetContent(vbox);
+
+        // Reattach the scrollbar now that we're on the mod list.
+        if (_scrollbar is not null && !MainElement.HasChild(_scrollbar))
+            MainElement.Append(_scrollbar);
     }
 
     private void NavigateToView(NavigationState.View view)
