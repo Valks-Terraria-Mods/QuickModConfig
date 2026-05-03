@@ -12,8 +12,6 @@ namespace QuickModConfig;
 
 public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data, string modName)
 {
-    private readonly List<ConfigRow> _configRows = [];
-
     public void Select()
     {
         VBoxContainer? content = Build();
@@ -65,6 +63,8 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
         if (ConfigReflectionHelpers.GetConfigInstance(data.ConfigType) is not ModConfig config)
             return null;
+
+        var configRows = new List<ConfigRow>();
 
         foreach (var entry in data.ModConfigEntries)
         {
@@ -195,7 +195,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
                     break;
             }
 
-            _configRows.Add(new ConfigRow()
+            configRows.Add(new ConfigRow()
             {
                 NameLabel = nameLabel,
                 FeedbackLabel = feedbackLabel
@@ -205,7 +205,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             entries.Add(entryHBox);
         }
 
-        foreach (var configRow in _configRows)
+        foreach (var configRow in configRows)
         {
             configRow.NameLabel.Width = StyleDimension.FromPixels(maxLabelNameWidth);
 
@@ -360,7 +360,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         }
     }
 
-    private sealed record ConfigRow
+    private readonly struct ConfigRow
     {
         internal required UIText NameLabel { get; init; }
         internal UIText? FeedbackLabel { get; init; }

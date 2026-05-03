@@ -6,8 +6,6 @@ namespace QuickModConfig;
 
 public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup modData)
 {
-    private VBoxContainer _content = null!;
-
     public void Select()
     {
         mainConfigPanel.SetContent(Build());
@@ -15,15 +13,10 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
     private VBoxContainer Build()
     {
-        _content = new VBoxContainer()
-        {
-            Width = StyleDimension.Fill,
-            Height = StyleDimension.Fill
-        };
-
+        var content = new VBoxContainer();
         var title = new UITitle(modData.ModName);
 
-        _content.Append(title);
+        content.Append(title);
 
         var uiList = new UIList()
         {
@@ -48,7 +41,7 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
             uiList.Add(modConfigBtn);
         }
 
-        _content.Append(uiList);
+        content.Append(uiList);
 
         var goBackBtn = new Button("Back")
         {
@@ -57,8 +50,8 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
         goBackBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
 
-        _content.Append(goBackBtn);
+        content.Append(goBackBtn);
 
-        return _content;
+        return content;
     }
 }
