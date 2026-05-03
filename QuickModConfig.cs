@@ -11,20 +11,6 @@ public class QuickModConfig : Mod
     public override void Load()
     {
         _modHandle = ValkyrieAPI.GetHandle(this);
-
-        // foreach (var modDataGroup in ModConfigCollector.Collect())
-        // {
-        //     Log(modDataGroup.ModName);
-
-        //     foreach (var modConfig in modDataGroup.ModConfigs)
-        //     {
-        //         Log($"  {modConfig.ModConfigName} (Scope: {modConfig.ConfigScope})");
-
-        //         foreach (var entry in modConfig.ModConfigEntries)
-        //             Log($"    {entry.Name} ({entry.ValueType}) = {entry.DefaultValue}");
-        //     }
-        // }
-
         _modHandle.RegisterUI("Quick Mod Config", "L", () => new MainConfigPanel());
     }
 
