@@ -262,12 +262,6 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         var member = entry.Member;
         bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
 
-        var spacingElement = new UIElement()
-        {
-            Width = StyleDimension.Fill,
-            Height = StyleDimension.Fill
-        };
-
         var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
         {
             PaddingLeft = HorizontalBooleanPadding,
@@ -288,8 +282,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             config.SaveChanges();
         });
 
-        spacingElement.Append(boolBtn);
-        entryHBox.Append(spacingElement);
+        entryHBox.Append(boolBtn);
         return null;
     }
 
@@ -301,10 +294,9 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
             return null;
         }
 
-        entryHBox.Append(new UIText($"[{entry.Member.GetType().Name}]")
+        entryHBox.Append(new UIText($"[{entry.ValueType.Name}]")
         {
-            TextOriginX = 0,
-            Width = StyleDimension.Fill,
+            TextOriginX = 0
         });
 
         return null;
