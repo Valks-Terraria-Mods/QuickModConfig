@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader.Config;
 using Terraria.UI;
@@ -13,8 +14,8 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
     private readonly List<ModConfigDataGroup> _modData;
     private UIElement? _currentContent;
-
     private UIList _uiList = null!;
+    private UIImageButton? _closeButton;
 
     public MainConfigPanel()
     {
@@ -33,25 +34,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         Append(MainElement);
 
         Build();
-
-        switch (NavigationState.CurrentView)
-        {
-            case NavigationState.View.ModConfigs:
-                var modGroup = _modData.Find(m => m.ModName == NavigationState.CurrentModName);
-                if (modGroup != null)
-                    new ModConfigsPanel(this, modGroup).Select();
-                break;
-
-            case NavigationState.View.Config:
-                modGroup = _modData.Find(m => m.ModName == NavigationState.CurrentModName);
-                if (modGroup != null)
-                {
-                    var configData = modGroup.ModConfigs.Find(c => c.ModConfigName == NavigationState.CurrentConfigName);
-                    if (configData != null)
-                        new ModConfigPanel(this, new ModConfigsPanel(this, modGroup), configData, modGroup.ModName).Select();
-                }
-                break;
-        }
+        NavigateToView(NavigationState.CurrentView);
     }
 
     public void Select()
@@ -94,9 +77,20 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         foreach (var mod in _modData)
         {
             var modBtn = new Button(mod.ModName);
-            var modConfigsPanel = new ModConfigsPanel(this, mod);
+            bool hasConfigs = mod.ModConfigs.Count > 0;
 
-            modBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
+            if (hasConfigs)
+            {
+                var modConfigsPanel = new ModConfigsPanel(this, mod);
+                modBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
+            }
+            else
+            {
+                // Gray out and disable interaction
+                modBtn.IgnoresMouseInteraction = true;
+                modBtn.TextColor = Color.DarkGray;
+                modBtn.BackgroundColor = Color.DimGray;
+            }
 
             _uiList.Add(modBtn);
         }
@@ -110,13 +104,11 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         };
 
         var resetAllBtn = new ResetButton("Reset All Configs");
-
         resetAllBtn.OnLeftClick += (_, _) =>
         {
             foreach (var modGroup in _modData)
                 ConfigResetter.ResetConfigs(modGroup.ModConfigs);
         };
-
         bottomRow.Append(resetAllBtn);
         vbox.Append(bottomRow);
 
@@ -124,7 +116,33 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         SetContent(vbox);
     }
 
-    private UIImageButton? _closeButton;
+    private void NavigateToView(NavigationState.View view)
+    {
+        switch (view)
+        {
+            case NavigationState.View.ModConfigs:
+                var modGroup = GetModGroup(NavigationState.CurrentModName);
+                if (modGroup != null)
+                    new ModConfigsPanel(this, modGroup).Select();
+                break;
+
+            case NavigationState.View.Config:
+                modGroup = GetModGroup(NavigationState.CurrentModName);
+                if (modGroup != null)
+                {
+                    var configData = modGroup.ModConfigs.Find(c => c.ModConfigName == NavigationState.CurrentConfigName);
+                    if (configData != null)
+                        new ModConfigPanel(this, new ModConfigsPanel(this, modGroup), configData, modGroup.ModName).Select();
+                }
+                break;
+        }
+    }
+
+    private ModConfigDataGroup? GetModGroup(string? modName)
+    {
+        if (string.IsNullOrEmpty(modName)) return null;
+        return _modData.Find(m => m.ModName == modName);
+    }
 
     public void SetCloseButton(UIImageButton button)
     {

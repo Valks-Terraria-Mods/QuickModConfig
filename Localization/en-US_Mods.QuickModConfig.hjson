@@ -1,72 +1,72 @@
 Keybinds: {
-    "Quick Mod Config.DisplayName": Quick  Mod  Config
-    QuickModConfigTool.DisplayName: Quick Mod Config Tool
+	"Quick Mod Config.DisplayName": Quick  Mod  Config
+	QuickModConfigTool.DisplayName: Quick Mod Config Tool
 }
 
 Configs: {
-    TestConfig: {
-        Speed: {
-            Tooltip: ""
-            Label: Speed
-        }
+	TestConfig: {
+		Speed: {
+			Tooltip: ""
+			Label: Speed
+		}
 
-        DisplayName: Test Config
+		DisplayName: Test Config
 
-        MyFloat: {
-            Label: My Float
-            Tooltip: ""
-        }
+		MyFloat: {
+			Label: My Float
+			Tooltip: ""
+		}
 
-        MyDouble: {
-            Label: My Double
-            Tooltip: ""
-        }
+		MyDouble: {
+			Label: My Double
+			Tooltip: ""
+		}
 
-        MyInt: {
-            Label: My Int
-            Tooltip: ""
-        }
+		MyInt: {
+			Label: My Int
+			Tooltip: ""
+		}
 
-        MyLong: {
-            Label: My Long
-            Tooltip: ""
-        }
+		MyLong: {
+			Label: My Long
+			Tooltip: ""
+		}
 
-        MyShort: {
-            Label: My Short
-            Tooltip: ""
-        }
+		MyShort: {
+			Label: My Short
+			Tooltip: ""
+		}
 
-        MyByte: {
-            Label: My Byte
-            Tooltip: ""
-        }
+		MyByte: {
+			Label: My Byte
+			Tooltip: ""
+		}
 
-        MyNullableInt: {
-            Label: My Nullable Int
-            Tooltip: ""
-        }
+		MyNullableInt: {
+			Label: My Nullable Int
+			Tooltip: ""
+		}
 
-        MyBool: {
-            Label: My Bool
-            Tooltip: ""
-        }
+		MyBool: {
+			Label: My Bool
+			Tooltip: ""
+		}
 
-        MyStringList: {
-            Label: My String List
-            Tooltip: ""
-        }
+		MyStringList: {
+			Label: My String List
+			Tooltip: ""
+		}
 
-        MyColor: {
-            Label: My Color
-            Tooltip: ""
-        }
-    }
+		MyColor: {
+			Label: My Color
+			Tooltip: ""
+		}
+	}
 }
 
 Tools: {
-    QuickModConfigTool: {
-        DisplayName: QuickModConfigTool
-        Description: The tool has no description! Add one in .hjson files!
-    }
+	QuickModConfigTool: {
+		DisplayName: QuickModConfigTool
+		Description: The tool has no description! Add one in .hjson files!
+	}
 }
