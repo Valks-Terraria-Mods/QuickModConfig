@@ -23,7 +23,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public override void OnInitialize()
     {
         MainElement.Width = StyleDimension.FromPixels(600);
-        MainElement.Height = StyleDimension.FromPixels(300);
+        MainElement.Height = StyleDimension.FromPixels(350);
         MainElement.Left = StyleDimension.FromPixels(-10);
         MainElement.Top = StyleDimension.FromPixels(-10);
         MainElement.HAlign = 1f;
