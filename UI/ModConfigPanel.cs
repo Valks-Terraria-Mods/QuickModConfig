@@ -19,10 +19,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         VBoxContainer? content = Build();
 
         if (content != null)
-        {
-            mainConfigPanel.MainElement.RemoveAllChildren();
-            mainConfigPanel.MainElement.Append(content);
-        }
+            mainConfigPanel.SetContent(content);
     }
 
     private VBoxContainer? Build()

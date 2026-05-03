@@ -10,8 +10,7 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
     public void Select()
     {
-        mainConfigPanel.MainElement.RemoveAllChildren();
-        mainConfigPanel.MainElement.Append(Build());
+        mainConfigPanel.SetContent(Build());
     }
 
     private VBoxContainer Build()

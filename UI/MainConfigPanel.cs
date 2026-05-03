@@ -11,6 +11,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public UIElement ScrollViewElement { get; private set; } = null!;
 
     private readonly List<ModConfigDataGroup> _modData;
+    private UIElement? _currentContent;
 
     private UIList _uiList = null!;
 
@@ -35,8 +36,16 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
     public void Select()
     {
-        MainElement.RemoveAllChildren();
         Build();
+    }
+
+    public void SetContent(UIElement content)
+    {
+        if (_currentContent is not null)
+            MainElement.RemoveChild(_currentContent);
+
+        _currentContent = content;
+        MainElement.Append(content);
     }
 
     public void SetScrollbar(UIScrollbar scrollbar)
@@ -72,8 +81,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
 
         vbox.Append(_uiList);
 
-        MainElement.Append(vbox);
-
         ScrollViewElement = _uiList;
+        SetContent(vbox);
     }
 }
