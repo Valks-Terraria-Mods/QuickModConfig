@@ -33,6 +33,9 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         MainElement.HAlign = 1f;
         MainElement.VAlign = 1f;
 
+        if (MainElement is UIPanel panel)
+            panel.BackgroundColor *= 0.3f; // Make background transparent
+
         Append(MainElement);
 
         Build();
