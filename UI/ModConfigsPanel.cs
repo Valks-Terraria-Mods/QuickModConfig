@@ -42,7 +42,7 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
         foreach (var modConfig in modData.ModConfigs)
         {
             var modConfigBtn = new Button(modConfig.ModConfigName);
-            var modConfigPanel = new ModConfigPanel(mainConfigPanel, this, modConfig);
+            var modConfigPanel = new ModConfigPanel(mainConfigPanel, this, modConfig, modData.ModName);
 
             modConfigBtn.OnLeftClick += (_, _) => modConfigPanel.Select();
 

@@ -10,7 +10,7 @@ using ValkyrieLib;
 
 namespace QuickModConfig;
 
-public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data)
+public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data, string modName)
 {
     private readonly List<ConfigRow> _configRows = [];
 
@@ -33,7 +33,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         {
             HAlign = 0.5f
         };
-        var title = new UITitle(data.ModConfigName);
+        var title = new UITitle($"{modName} » {data.ModConfigName}");
         var scope = new UIText($"({data.ConfigScope})", textScale: 0.7f)
         {
             TextOriginY = 0.25f,
@@ -71,10 +71,17 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
         foreach (var entry in data.ModConfigEntries)
         {
+            const float SpaceAfterName = 5;
+
             var entryHBox = new HBoxContainer();
             var nameLabel = new UIText(entry.Name) { TextOriginX = 1f };
-            nameLabel.Recalculate();
             entryHBox.Append(nameLabel);
+
+            var nameSpacer = new UIElement() {
+                Width = StyleDimension.FromPixels(SpaceAfterName)
+            };
+
+            entryHBox.Append(nameSpacer);
 
             var minNameWidth = nameLabel.MinWidth.Pixels;
             if (minNameWidth > maxLabelNameWidth) maxLabelNameWidth = minNameWidth;
@@ -138,15 +145,30 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
                 case ConfigEntryUIType.Boolean:
                 {
+                    const float HorizontalBooleanPadding = 15;
+                    const string BooleanTrue = "On";
+                    const string BooleanFalse = "Off";
+
                     var member = entry.Member;
                     bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
-                    var boolBtn = new Button(current ? "On" : "Off");
+                    
+                    var spacingElement = new UIElement()
+                    {
+                        Width = StyleDimension.Fill,
+                        Height = StyleDimension.Fill
+                    };
+                    
+                    var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
+                    {
+                        PaddingLeft = HorizontalBooleanPadding,
+                        PaddingRight = HorizontalBooleanPadding,
+                    };
 
                     boolBtn.OnLeftClick += (_, _) =>
                     {
                         bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
                         ConfigReflectionHelpers.SetMemberValue(member, config, !current);
-                        boolBtn.SetText(!current ? "On" : "Off");
+                        boolBtn.SetText(!current ? BooleanTrue : BooleanFalse);
                         config.SaveChanges();
                     };
 
@@ -156,17 +178,23 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
                         config.SaveChanges();
                     };
 
-                    entryHBox.Append(boolBtn);
+                    spacingElement.Append(boolBtn);
+                    entryHBox.Append(spacingElement);
                     break;
                 }
 
                 case ConfigEntryUIType.EnumDropdown:
                 case ConfigEntryUIType.NotSupported:
-                    entryHBox.Append(new UIText($"[{entry.Member.GetType().Name} not implemented]"));
+                    // TODO: Implement these types
+                    entryHBox.Append(new UIText($"[{entry.Member.GetType().Name}]")
+                    {
+                        TextOriginX = 0,
+                        Width = StyleDimension.Fill,
+                    });
                     break;
 
                 default:
-                    Main.NewText($"Unexpected UIType: {entry.UIType}");
+                    QuickModConfig.Log($"Unexpected UIType: {entry.UIType}");
                     break;
             }
 
