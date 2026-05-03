@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
-using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.UI;
 using ValkyrieLib;
 
 namespace QuickModConfig;
 
-public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data, string modName)
+public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel modConfigsPanel, ModConfigData data, string modName)
 {
     public void Select()
     {
@@ -61,7 +60,7 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         var maxLabelNameWidth = 0f;
         var maxFeedbackNameWidth = 0f;
 
-        if (ConfigReflectionHelpers.GetConfigInstance(data.ConfigType) is not ModConfig config)
+        if (Reflection.GetConfigInstance(data.ConfigType) is not ModConfig config)
             return null;
 
         var configRows = new List<ConfigRow>();
@@ -88,13 +87,13 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
 
             UIText? feedbackLabel = entry.UIType switch
             {
-                ConfigEntryUIType.Slider => BuildSliderEntry(entryHBox, config, entry, resetBtn),
-                ConfigEntryUIType.TextInput => BuildTextInputEntry(entryHBox, config, entry, resetBtn),
-                ConfigEntryUIType.Boolean => BuildBooleanEntry(entryHBox, config, entry, resetBtn),
-                ConfigEntryUIType.EnumDropdown => BuildEnumDropdownEntry(entryHBox, config, entry, resetBtn),
-                ConfigEntryUIType.NotSupported => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: false),
+                ConfigEntryUIType.Slider => EntryBuilder.BuildSliderEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.TextInput => EntryBuilder.BuildTextInputEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.Boolean => EntryBuilder.BuildBooleanEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.EnumDropdown => EntryBuilder.BuildEnumDropdownEntry(entryHBox, config, entry, resetBtn),
+                ConfigEntryUIType.NotSupported => EntryBuilder.BuildUnsupportedEntry(entryHBox, entry, logUnexpected: false),
 
-                _ => BuildUnsupportedEntry(entryHBox, entry, logUnexpected: true),
+                _ => EntryBuilder.BuildUnsupportedEntry(entryHBox, entry, logUnexpected: true),
             };
 
             if (feedbackLabel != null)
@@ -135,307 +134,6 @@ public class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsPanel mod
         vboxMain.Append(goBackBtn);
 
         return vboxMain;
-    }
-
-    private static UIText? BuildEnumDropdownEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
-    {
-        var member = entry.Member;
-        Type valueType = ConfigReflectionHelpers.GetMemberType(member)!;
-
-        if (valueType is null)
-            return null;
-
-        Type underlying = Nullable.GetUnderlyingType(valueType)!;
-        Type enumType = underlying ?? valueType;
-        Type structType = underlying is not null ? typeof(Nullable<>).MakeGenericType(enumType) : enumType;
-        Type dropdownType = typeof(Dropdown<>).MakeGenericType(structType);
-
-        object currentVal = ConfigReflectionHelpers.GetMemberValue(member, config)!;
-
-        object initialDropdownValue;
-
-        if (underlying is not null)
-        {
-            initialDropdownValue = currentVal is null ? Activator.CreateInstance(structType)! : Activator.CreateInstance(structType, currentVal)!;
-        }
-        else
-        {
-            initialDropdownValue = currentVal ?? Activator.CreateInstance(enumType)!;
-        }
-
-        Action<object> callback = selected =>
-        {
-            object converted;
-            if (underlying is not null)
-            {
-                bool hasValue = (bool)structType.GetProperty("HasValue")!.GetValue(selected)!;
-                converted = hasValue
-                    ? structType.GetProperty("Value")!.GetValue(selected)!
-                    : null!;
-            }
-            else
-            {
-                converted = selected;
-            }
-
-            ConfigReflectionHelpers.SetMemberValue(member, config, converted);
-            config.SaveChanges();
-        };
-
-        object dropdownObj = Activator.CreateInstance(dropdownType, initialDropdownValue, callback)!;
-        entryHBox.Append((UIElement)dropdownObj);
-
-        resetBtn.OnLeftClick += (_, _) =>
-        {
-            object? defaultVal = entry.DefaultValue;
-            object defaultForDropdown;
-
-            if (underlying is not null)
-            {
-                defaultForDropdown = defaultVal is null ? Activator.CreateInstance(structType)! : Activator.CreateInstance(structType, defaultVal)!;
-            }
-            else
-            {
-                defaultForDropdown = defaultVal ?? Activator.CreateInstance(enumType)!;
-            }
-
-            var setValueMethod = dropdownType.GetMethod("SetValue", [structType, typeof(bool)]);
-            
-            setValueMethod!.Invoke(dropdownObj, [defaultForDropdown, true]);
-        };
-
-        return null;
-    }
-
-    private static UIText? BuildSliderEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
-    {
-        var member = entry.Member;
-        float min = entry.Min ?? 0f;
-        float max = entry.Max ?? 10f;
-        float defaultVal = ConfigReflectionHelpers.ConvertToFloat(entry.DefaultValue, 0f);
-        float currentVal = ConfigReflectionHelpers.ConvertToFloat(
-            ConfigReflectionHelpers.GetMemberValue(member, config), defaultVal);
-
-        var feedbackLabel = new UIText(currentVal.ToString("0.##"));
-        var slider = CreateSlider(config, member, currentVal, min, max, feedbackLabel);
-
-        WireResetButton(resetBtn, () => slider.SetValue(defaultVal, notify: true));
-
-        entryHBox.Append(slider);
-        entryHBox.Append(feedbackLabel);
-
-        return feedbackLabel;
-    }
-
-    private static UIText? BuildTextInputEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
-    {
-        var member = entry.Member;
-        string strValue = ConfigReflectionHelpers.GetMemberValue(member, config)?.ToString() ?? "";
-
-        var inputField = new InputField(strValue)
-        {
-            MaxLength = int.MaxValue
-        };
-
-        inputField.ValueChanged += newStr =>
-        {
-            ConfigReflectionHelpers.SetMemberValue(member, config, newStr);
-            config.SaveChanges();
-        };
-
-        WireResetButton(resetBtn, () =>
-        {
-            ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? "");
-            config.SaveChanges();
-        });
-
-        entryHBox.Append(inputField);
-        return null;
-    }
-
-    private static UIText? BuildBooleanEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
-    {
-        const float HorizontalBooleanPadding = 15;
-        const string BooleanTrue = "On";
-        const string BooleanFalse = "Off";
-
-        var member = entry.Member;
-        bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
-
-        var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
-        {
-            PaddingLeft = HorizontalBooleanPadding,
-            PaddingRight = HorizontalBooleanPadding,
-        };
-
-        boolBtn.OnLeftClick += (_, _) =>
-        {
-            bool current = (bool)(ConfigReflectionHelpers.GetMemberValue(member, config) ?? false);
-            ConfigReflectionHelpers.SetMemberValue(member, config, !current);
-            boolBtn.SetText(!current ? BooleanTrue : BooleanFalse);
-            config.SaveChanges();
-        };
-
-        WireResetButton(resetBtn, () =>
-        {
-            ConfigReflectionHelpers.SetMemberValue(member, config, entry.DefaultValue ?? false);
-            config.SaveChanges();
-        });
-
-        entryHBox.Append(boolBtn);
-        return null;
-    }
-
-    private static UIText? BuildUnsupportedEntry(HBoxContainer entryHBox, ModConfigEntry entry, bool logUnexpected)
-    {
-        if (logUnexpected)
-        {
-            QuickModConfig.Log($"Unexpected UIType: {entry.UIType}");
-            return null;
-        }
-
-        entryHBox.Append(new UIText($"[{entry.ValueType.Name}]")
-        {
-            TextOriginX = 0
-        });
-
-        return null;
-    }
-
-    private static void WireResetButton(UIImageButton resetBtn, Action resetAction)
-    {
-        resetBtn.OnLeftClick += (_, _) => resetAction();
-    }
-
-    private static Slider CreateSlider(ModConfig config, MemberInfo memberInfo, float value, float min, float max, UIText valueFeedback)
-    {
-        var slider = new Slider(value, min, max);
-
-        slider.ValueChanged += (newValue) =>
-        {
-            Type? memberType = ConfigReflectionHelpers.GetMemberType(memberInfo);
-
-            if (memberType == null)
-                return;
-
-            object finalValue = ConfigReflectionHelpers.ConvertToMemberType(newValue, memberType);
-            float displayValue = ConfigReflectionHelpers.ConvertToFloat(finalValue, 0f);
-            valueFeedback.SetText(displayValue.ToString("0.##"));
-            ConfigReflectionHelpers.SetMemberValue(memberInfo, config, finalValue);
-            config.SaveChanges();
-        };
-
-        return slider;
-    }
-
-    private static class ConfigReflectionHelpers
-    {
-        /// <summary>
-        /// ModContent.GetInstance<T>() does not have a type parameter so that is why this method was created.
-        /// </summary>
-        internal static object? GetConfigInstance(Type configType)
-        {
-            var method = typeof(ModContent).GetMethod("GetInstance", Type.EmptyTypes);
-
-            if (method == null)
-            {
-                QuickModConfig.Log("ModContent.GetInstance method not found - tModLoader API changed?");
-                return null;
-            }
-
-            var generic = method.MakeGenericMethod(configType);
-
-            var instance = generic.Invoke(null, null);
-
-            if (instance == null)
-            {
-                QuickModConfig.Log($"ModContent.GetInstance<{configType.Name}>() returned null.");
-                return null;
-            }
-
-            return instance;
-        }
-
-        internal static object? GetMemberValue(MemberInfo member, object target)
-        {
-            switch (member)
-            {
-                case PropertyInfo p: return p.GetValue(target);
-                case FieldInfo f: return f.GetValue(target);
-                default:
-                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
-                    return null;
-            }
-        }
-
-        internal static void SetMemberValue(MemberInfo member, object target, object value)
-        {
-            switch (member)
-            {
-                case PropertyInfo p: p.SetValue(target, value); break;
-                case FieldInfo f: f.SetValue(target, value); break;
-                default:
-                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
-                    break;
-            }
-        }
-
-        internal static Type? GetMemberType(MemberInfo member)
-        {
-            switch (member)
-            {
-                case PropertyInfo p:
-                    return p.PropertyType;
-                case FieldInfo f:
-                    return f.FieldType;
-                default:
-                    QuickModConfig.Log($"Unsupported member type: {member.MemberType}");
-                    return null;
-            }
-        }
-
-        internal static float ConvertToFloat(object? value, float fallback)
-        {
-            if (value == null)
-                return fallback;
-
-            // Unwrap Nullable<T>
-            Type type = value.GetType();
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                var hasValue = (bool)type.GetProperty("HasValue")!.GetValue(value)!;
-                if (!hasValue) return fallback;
-                value = type.GetProperty("Value")!.GetValue(value)!;
-            }
-
-            return value switch
-            {
-                float f => f,
-                double d => (float)d,
-                int i => i,
-                long l => l,
-                short s => s,
-                byte b => b,
-                _ => Convert.ToSingle(value)
-            };
-        }
-
-        internal static object ConvertToMemberType(float sliderValue, Type targetType)
-        {
-            Type underlying = Nullable.GetUnderlyingType(targetType)!;
-            if (underlying != null)
-                targetType = underlying;
-
-            if (targetType == typeof(float)) return sliderValue;
-            if (targetType == typeof(double)) return (double)sliderValue;
-            if (targetType == typeof(int)) return (int)Math.Round(sliderValue);
-            if (targetType == typeof(long)) return (long)Math.Round(sliderValue);
-            if (targetType == typeof(short)) return (short)Math.Round(sliderValue);
-            if (targetType == typeof(byte)) return (byte)Math.Clamp(Math.Round(sliderValue), 0, 255);
-            if (targetType == typeof(bool)) return sliderValue >= 0.5f;
-
-            return Convert.ChangeType(sliderValue, targetType);
-        }
     }
 
     private readonly struct ConfigRow
