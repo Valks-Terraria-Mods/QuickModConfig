@@ -124,14 +124,21 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
         hboxEntries.Append(entriesScrollbar);
         vboxMain.Append(hboxEntries);
 
-        var goBackBtn = new Button("Back")
+        var hboxNav = new HBoxContainer
         {
-            VAlign = 1f
+            VAlign = 1f,
+            HAlign = 0f
         };
 
-        goBackBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
+        var modsBtn = new Button("Mods");
+        modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
+        hboxNav.Append(modsBtn);
 
-        vboxMain.Append(goBackBtn);
+        var configsBtn = new Button($"{modName}'s Configs");
+        configsBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
+        hboxNav.Append(configsBtn);
+
+        vboxMain.Append(hboxNav);
 
         return vboxMain;
     }

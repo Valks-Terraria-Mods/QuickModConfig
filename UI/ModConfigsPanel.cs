@@ -43,14 +43,12 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
         content.Append(uiList);
 
-        var goBackBtn = new Button("Back")
+        var modsBtn = new Button("Mods")
         {
             VAlign = 1f
         };
-
-        goBackBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
-
-        content.Append(goBackBtn);
+        modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
+        content.Append(modsBtn);
 
         return content;
     }
