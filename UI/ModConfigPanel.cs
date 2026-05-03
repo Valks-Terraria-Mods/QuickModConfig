@@ -145,11 +145,11 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
 
         var modsBtn = new Button("Mods");
         modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
-        hboxNav.Append(modsBtn);
 
         var configsBtn = new Button($"{modName}'s Configs");
         configsBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
         hboxNav.Append(configsBtn);
+        hboxNav.Append(modsBtn);
         hboxNav.Append(resetAllBtn);
 
         vboxMain.Append(hboxNav);
