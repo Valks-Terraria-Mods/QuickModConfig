@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ModLoader.Config;
 using Terraria.UI;
 using ValkyrieLib;
 
@@ -23,7 +24,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
     public override void OnInitialize()
     {
         MainElement.Width = StyleDimension.FromPixels(600);
-        MainElement.Height = StyleDimension.FromPixels(350);
+        MainElement.Height = StyleDimension.FromPixels(400);
         MainElement.Left = StyleDimension.FromPixels(-10);
         MainElement.Top = StyleDimension.FromPixels(-10);
         MainElement.HAlign = 1f;
@@ -80,6 +81,23 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton, IHasScrol
         }
 
         vbox.Append(_uiList);
+
+        var bottomRow = new HBoxContainer
+        {
+            VAlign = 1f,
+            HAlign = 0f
+        };
+
+        var resetAllBtn = new ResetButton("Reset All Configs");
+
+        resetAllBtn.OnLeftClick += (_, _) =>
+        {
+            foreach (var modGroup in _modData)
+                ConfigResetter.ResetConfigs(modGroup.ModConfigs);
+        };
+
+        bottomRow.Append(resetAllBtn);
+        vbox.Append(bottomRow);
 
         ScrollViewElement = _uiList;
         SetContent(vbox);

@@ -14,7 +14,7 @@ public partial class ModConfigPanel
         internal static UIText? BuildEnumDropdownEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
         {
             var member = entry.Member;
-            Type valueType = Reflection.GetMemberType(member)!;
+            Type valueType = ConfigReflection.GetMemberType(member)!;
 
             if (valueType is null)
                 return null;
@@ -24,7 +24,7 @@ public partial class ModConfigPanel
             Type structType = underlying is not null ? typeof(Nullable<>).MakeGenericType(enumType) : enumType;
             Type dropdownType = typeof(Dropdown<>).MakeGenericType(structType);
 
-            object currentVal = Reflection.GetMemberValue(member, config)!;
+            object currentVal = ConfigReflection.GetMemberValue(member, config)!;
 
             object initialDropdownValue;
 
@@ -52,7 +52,7 @@ public partial class ModConfigPanel
                     converted = selected;
                 }
 
-                Reflection.SetMemberValue(member, config, converted);
+                ConfigReflection.SetMemberValue(member, config, converted);
                 config.SaveChanges();
             };
 
@@ -86,9 +86,9 @@ public partial class ModConfigPanel
             var member = entry.Member;
             float min = entry.Min ?? 0f;
             float max = entry.Max ?? 10f;
-            float defaultVal = Reflection.ConvertToFloat(entry.DefaultValue, 0f);
-            float currentVal = Reflection.ConvertToFloat(
-                Reflection.GetMemberValue(member, config), defaultVal);
+            float defaultVal = ConfigReflection.ConvertToFloat(entry.DefaultValue, 0f);
+            float currentVal = ConfigReflection.ConvertToFloat(
+                ConfigReflection.GetMemberValue(member, config), defaultVal);
 
             var feedbackLabel = new UIText(currentVal.ToString("0.##"));
             var slider = CreateSlider(config, member, currentVal, min, max, feedbackLabel);
@@ -96,6 +96,7 @@ public partial class ModConfigPanel
             WireResetButton(resetBtn, () => slider.SetValue(defaultVal, notify: true));
 
             entryHBox.Append(slider);
+            entryHBox.Append(new UIElement { Width = StyleDimension.FromPixels(5) });
             entryHBox.Append(feedbackLabel);
 
             return feedbackLabel;
@@ -104,7 +105,7 @@ public partial class ModConfigPanel
         internal static UIText? BuildTextInputEntry(HBoxContainer entryHBox, ModConfig config, ModConfigEntry entry, UIImageButton resetBtn)
         {
             var member = entry.Member;
-            string strValue = Reflection.GetMemberValue(member, config)?.ToString() ?? "";
+            string strValue = ConfigReflection.GetMemberValue(member, config)?.ToString() ?? "";
 
             var inputField = new InputField(strValue)
             {
@@ -113,13 +114,13 @@ public partial class ModConfigPanel
 
             inputField.ValueChanged += newStr =>
             {
-                Reflection.SetMemberValue(member, config, newStr);
+                ConfigReflection.SetMemberValue(member, config, newStr);
                 config.SaveChanges();
             };
 
             WireResetButton(resetBtn, () =>
             {
-                Reflection.SetMemberValue(member, config, entry.DefaultValue ?? "");
+                ConfigReflection.SetMemberValue(member, config, entry.DefaultValue ?? "");
                 config.SaveChanges();
             });
 
@@ -134,7 +135,7 @@ public partial class ModConfigPanel
             const string BooleanFalse = "Off";
 
             var member = entry.Member;
-            bool current = (bool)(Reflection.GetMemberValue(member, config) ?? false);
+            bool current = (bool)(ConfigReflection.GetMemberValue(member, config) ?? false);
 
             var boolBtn = new Button(current ? BooleanTrue : BooleanFalse)
             {
@@ -144,8 +145,8 @@ public partial class ModConfigPanel
 
             boolBtn.OnLeftClick += (_, _) =>
             {
-                bool current = (bool)(Reflection.GetMemberValue(member, config) ?? false);
-                Reflection.SetMemberValue(member, config, !current);
+                bool current = (bool)(ConfigReflection.GetMemberValue(member, config) ?? false);
+                ConfigReflection.SetMemberValue(member, config, !current);
                 boolBtn.SetText(!current ? BooleanTrue : BooleanFalse);
                 config.SaveChanges();
             };
@@ -153,7 +154,7 @@ public partial class ModConfigPanel
             resetBtn.OnLeftClick += (_, _) =>
             {
                 bool defaultBool = (bool)(entry.DefaultValue ?? false);
-                Reflection.SetMemberValue(member, config, defaultBool);
+                ConfigReflection.SetMemberValue(member, config, defaultBool);
                 boolBtn.SetText(defaultBool ? BooleanTrue : BooleanFalse);
                 config.SaveChanges();
             };
@@ -189,15 +190,15 @@ public partial class ModConfigPanel
 
             slider.ValueChanged += (newValue) =>
             {
-                Type? memberType = Reflection.GetMemberType(memberInfo);
+                Type? memberType = ConfigReflection.GetMemberType(memberInfo);
 
                 if (memberType == null)
                     return;
 
-                object finalValue = Reflection.ConvertToMemberType(newValue, memberType);
-                float displayValue = Reflection.ConvertToFloat(finalValue, 0f);
+                object finalValue = ConfigReflection.ConvertToMemberType(newValue, memberType);
+                float displayValue = ConfigReflection.ConvertToFloat(finalValue, 0f);
                 valueFeedback.SetText(displayValue.ToString("0.##"));
-                Reflection.SetMemberValue(memberInfo, config, finalValue);
+                ConfigReflection.SetMemberValue(memberInfo, config, finalValue);
                 config.SaveChanges();
             };
 

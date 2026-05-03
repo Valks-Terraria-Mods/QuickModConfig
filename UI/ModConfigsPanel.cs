@@ -1,4 +1,6 @@
+using Microsoft.Xna.Framework;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ModLoader.Config;
 using Terraria.UI;
 using ValkyrieLib;
 
@@ -43,12 +45,29 @@ public class ModConfigsPanel(MainConfigPanel mainConfigPanel, ModConfigDataGroup
 
         content.Append(uiList);
 
+        var bottomRow = new HBoxContainer
+        {
+            VAlign = 1f,
+            HAlign = 0f
+        };
+
+        var resetAllBtn = new ResetButton("Reset Configs");
+
+        resetAllBtn.OnLeftClick += (_, _) =>
+        {
+            ConfigResetter.ResetConfigs(modData.ModConfigs);
+            Select();
+        };
+
         var modsBtn = new Button("Mods")
         {
             VAlign = 1f
         };
         modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
-        content.Append(modsBtn);
+        bottomRow.Append(modsBtn);
+        bottomRow.Append(resetAllBtn);
+
+        content.Append(bottomRow);
 
         return content;
     }

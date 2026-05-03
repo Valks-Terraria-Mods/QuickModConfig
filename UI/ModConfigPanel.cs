@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader.Config;
@@ -60,7 +61,7 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
         var maxLabelNameWidth = 0f;
         var maxFeedbackNameWidth = 0f;
 
-        if (Reflection.GetConfigInstance(data.ConfigType) is not ModConfig config)
+        if (ConfigReflection.GetConfigInstance(data.ConfigType) is not ModConfig config)
             return null;
 
         var configRows = new List<ConfigRow>();
@@ -130,6 +131,14 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
             HAlign = 0f
         };
 
+        var resetAllBtn = new ResetButton("Reset Config");
+
+        resetAllBtn.OnLeftClick += (_, _) =>
+        {
+            ConfigResetter.ResetConfig(data);
+            Select();
+        };
+
         var modsBtn = new Button("Mods");
         modsBtn.OnLeftClick += (_, _) => mainConfigPanel.Select();
         hboxNav.Append(modsBtn);
@@ -137,6 +146,7 @@ public partial class ModConfigPanel(MainConfigPanel mainConfigPanel, ModConfigsP
         var configsBtn = new Button($"{modName}'s Configs");
         configsBtn.OnLeftClick += (_, _) => modConfigsPanel.Select();
         hboxNav.Append(configsBtn);
+        hboxNav.Append(resetAllBtn);
 
         vboxMain.Append(hboxNav);
 
