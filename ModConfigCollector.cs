@@ -5,6 +5,7 @@ using System.Reflection;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
+using Microsoft.Xna.Framework;
 
 namespace QuickModConfig;
 
@@ -98,6 +99,10 @@ public sealed class ModConfigCollector
         {
             uiType = ConfigEntryUIType.Boolean;
         }
+        else if (valueType == typeof(Color))
+        {
+            uiType = ConfigEntryUIType.Color;
+        }
         else if (valueType.IsEnum)
         {
             uiType = ConfigEntryUIType.EnumDropdown;
@@ -159,6 +164,7 @@ public sealed record ModConfigEntry
 public enum ConfigEntryUIType
 {
     Slider,
+    Color,
     TextInput,
     Boolean,
     EnumDropdown,

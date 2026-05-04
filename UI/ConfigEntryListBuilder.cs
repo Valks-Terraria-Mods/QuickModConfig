@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -95,9 +96,31 @@ internal static class ConfigEntryListBuilder
                 ConfigEntryUIType.TextInput => BuildTextInputEntry(row, config, entry, resetButton),
                 ConfigEntryUIType.Boolean => BuildBooleanEntry(row, config, entry, resetButton),
                 ConfigEntryUIType.EnumDropdown => BuildEnumDropdownEntry(row, config, entry, resetButton),
+                ConfigEntryUIType.Color => BuildColorEntry(row, config, entry, resetButton),
                 ConfigEntryUIType.NotSupported => BuildUnsupportedEntry(row, entry, logUnexpected: false),
                 _ => BuildUnsupportedEntry(row, entry, logUnexpected: true),
             };
+        }
+
+        private static UIText? BuildColorEntry(HBoxContainer row, ModConfig config, ModConfigEntry entry, UIImageButton resetButton)
+        {
+            MemberInfo member = entry.Member;
+
+            Color currentColor = ConfigReflection.GetMemberValue(member, config) is Color c ? c : Color.White;
+
+            var button = new ColorPickerButton(currentColor, color =>
+            {
+                SetMemberValueAndSave(member, config, color);
+            });
+
+            resetButton.OnLeftClick += (_, _) =>
+            {
+                Color defaultColor = entry.DefaultValue is Color dc ? dc : Color.White;
+                button.SetColor(defaultColor, notify: true);
+            };
+
+            row.Append(button);
+            return null;
         }
 
         private static UIText? BuildEnumDropdownEntry(HBoxContainer row, ModConfig config, ModConfigEntry entry, UIImageButton resetButton)
@@ -275,8 +298,9 @@ internal static class ConfigEntryListBuilder
 
         private static void SetMemberValueAndSave(MemberInfo member, ModConfig config, object? value)
         {
-            ConfigReflection.SetMemberValue(member, config, value!);
-            config.SaveChanges();
+            ModConfig pendingConfig = ConfigManager.GeneratePopulatedClone(config);
+            ConfigReflection.SetMemberValue(member, pendingConfig, value!);
+            config.SaveChanges(pendingConfig);
         }
 
         private static void WireResetButton(UIImageButton resetButton, Action resetAction)

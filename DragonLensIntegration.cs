@@ -3,10 +3,7 @@ using ReLogic.Content;
 using Terraria.ModLoader;
 using DragonLens.Core.Systems.ThemeSystem;
 using DragonLens.Core.Systems.ToolbarSystem;
-using Terraria;
 using DragonLens.Core.Systems.ToolSystem;
-using System;
-using Microsoft.Xna.Framework;
 
 namespace QuickModConfig;
 
