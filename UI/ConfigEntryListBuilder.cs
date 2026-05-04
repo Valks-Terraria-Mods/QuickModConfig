@@ -175,7 +175,7 @@ internal static class ConfigEntryListBuilder
             WireResetButton(resetButton, () => slider.SetValue(defaultValue, notify: true));
 
             row.Append(slider);
-            row.Append(new UIElement { Width = StyleDimension.FromPixels(5f) });
+            row.Append(new UIElement { Width = StyleDimension.FromPixels(10f) });
             row.Append(feedbackLabel);
 
             return feedbackLabel;
