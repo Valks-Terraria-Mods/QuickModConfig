@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 using ValkyrieLib;
@@ -13,11 +15,15 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton
     private const float PanelHeight = 400;
     private const float PanelTransparency = 0.3f;
     private const float PanelMargin = 10;
+    private const float DragHandleHeight = 30;
 
     private readonly List<ModConfigDataGroup> _modData;
     private ConfigPanelNavigator _navigator = null!;
     private UIElement? _currentContent;
+    private UIElement? _dragHandle;
     private UIImageButton? _closeButton;
+    private Vector2 _dragOffset;
+    private bool _dragging;
 
     public MainConfigPanel()
     {
@@ -45,6 +51,7 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton
 
         _currentContent = content;
         MainElement.Append(content);
+        BringDragHandleToFront();
 
         if (_closeButton is not null)
         {
@@ -59,9 +66,29 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton
         MainElement.Append(_closeButton);
     }
 
-    private static UIPanel CreateMainElement()
+    public override void Update(GameTime gameTime)
     {
-        return new UIPanel
+        base.Update(gameTime);
+
+        if (!_dragging)
+            return;
+
+        if (!Main.mouseLeft)
+        {
+            _dragging = false;
+            return;
+        }
+
+        Vector2 panelPosition = Main.MouseScreen - _dragOffset;
+
+        MainElement.Left = StyleDimension.FromPixels(panelPosition.X);
+        MainElement.Top = StyleDimension.FromPixels(panelPosition.Y);
+        MainElement.Recalculate();
+    }
+
+    private UIPanel CreateMainElement()
+    {
+        var panel = new UIPanel
         {
             Width = StyleDimension.FromPixels(PanelWidth),
             Height = StyleDimension.FromPixels(PanelHeight),
@@ -72,5 +99,41 @@ public class MainConfigPanel : UIState, IBlocksInput, IHasCloseButton
             HAlign = 1f,
             VAlign = 1f
         };
+
+        _dragHandle = new UIElement
+        {
+            Width = StyleDimension.Fill,
+            Height = StyleDimension.FromPixels(DragHandleHeight)
+        };
+
+        _dragHandle.OnLeftMouseDown += (_, _) => StartDragging();
+        _dragHandle.OnLeftMouseUp += (_, _) => _dragging = false;
+
+        panel.Append(_dragHandle);
+
+        return panel;
+    }
+
+    private void BringDragHandleToFront()
+    {
+        if (_dragHandle is null)
+            return;
+
+        _dragHandle.Remove();
+        MainElement.Append(_dragHandle);
+    }
+
+    private void StartDragging()
+    {
+        CalculatedStyle dimensions = MainElement.GetDimensions();
+
+        _dragging = true;
+        _dragOffset = Main.MouseScreen - new Vector2(dimensions.X, dimensions.Y);
+
+        MainElement.Left = StyleDimension.FromPixels(dimensions.X);
+        MainElement.Top = StyleDimension.FromPixels(dimensions.Y);
+        MainElement.HAlign = 0f;
+        MainElement.VAlign = 0f;
+        MainElement.Recalculate();
     }
 }
