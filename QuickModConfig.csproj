@@ -25,9 +25,5 @@
 
       <!-- Exclude Source -->
       <Compile Remove="Source\**\*.cs" />
-
-      <!-- Make DragonLens internal types public -->
-      <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="true" />
-      <Publicize Include="DragonLens" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
     </ItemGroup>
 </Project>
