@@ -1,14 +1,18 @@
-All mod configs are accessible at the bottom right of the screen.
+[h2]What is this?[/h2]
+This mod recreates the built-in Mod Configuration panel but makes the panel much smaller, transparent and draggable so the center of the screen is visible and the panel can be opened with a keybind that remembers which config you were looking at before. Changing any setting does not require you to click a Save Config button, all edits update in realtime.
 
-There are two ways you can open this panel.
-1. Configure and use the "Quick Mod Config" keybind
-2. Add the tool with a gear icon if DragonLens mod is installed
+[h2]Why was this created?[/h2]
+To allow realtime tweaking while being able to see any part of the screen, especially the center.
 
-Features
-- Config panel is at bottom right of screen keeping the center of screen visible
-- The panel remembers where you left off even if you leave/re-join your world
-- Config edits are saved in realtime, no need to press a "Save Config" button
+[h2]How to use it?[/h2]
+You can open the panel by configuring the "Quick Mod Config" keybind in the games settings or if you have DragonLens mod installed it will appear as a new tool in that.
 
-Known Issues
-- Mods are showing up even if they don't have any mod configs. I will need to gray out / disable the buttons but still show them.
-- Color and List types are not supported yet
+[h2]Known Issues[/h2]
+Not all types are supported. Currently only colors, numerical types, booleans, enums and strings are supported.
+
+All contributions are welcome. https://github.com/Valks-Terraria-Mods/QuickModConfig
+
+If you have a question you can ask in https://discord.gg/j8HQZZ76r8
+
+[h2]Credits[/h2]
+Gear icon by MSavioti from https://opengameart.org/content/gear-pixel-art-32x32

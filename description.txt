@@ -1,1 +1,18 @@
-Quickly modify mod configs in realtime.
+[h2]What is this?[/h2]
+This mod recreates the built-in Mod Configuration panel but makes the panel much smaller, transparent and draggable so the center of the screen is visible and the panel can be opened with a keybind that remembers which config you were looking at before. Changing any setting does not require you to click a Save Config button, all edits update in realtime.
+
+[h2]Why was this created?[/h2]
+To allow realtime tweaking while being able to see any part of the screen, especially the center.
+
+[h2]How to use it?[/h2]
+You can open the panel by configuring the "Quick Mod Config" keybind in the games settings or if you have DragonLens mod installed it will appear as a new tool in that.
+
+[h2]Known Issues[/h2]
+Not all types are supported. Currently only colors, numerical types, booleans, enums and strings are supported.
+
+All contributions are welcome. https://github.com/Valks-Terraria-Mods/QuickModConfig
+
+If you have a question you can ask in https://discord.gg/j8HQZZ76r8
+
+[h2]Credits[/h2]
+Gear icon by MSavioti from https://opengameart.org/content/gear-pixel-art-32x32
