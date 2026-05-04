@@ -123,7 +123,7 @@ public sealed class ColorSelectorGrid : UIElement
     private void DrawMarker(SpriteBatch spriteBatch, Rectangle bounds)
     {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
-        int halfOuter = MarkerOuterSize / 2;
+        const int halfOuter = MarkerOuterSize / 2;
         int markerX = bounds.X + (int)MathF.Round((bounds.Width - 1) * _hue);
         int markerY = bounds.Y + (int)MathF.Round((bounds.Height - 1) * (1f - _lightness));
 
@@ -132,8 +132,8 @@ public sealed class ColorSelectorGrid : UIElement
 
         Rectangle outerRect = new(markerX - halfOuter, markerY - halfOuter, MarkerOuterSize, MarkerOuterSize);
         Rectangle innerRect = new(
-            markerX - MarkerInnerSize / 2,
-            markerY - MarkerInnerSize / 2,
+            markerX - (MarkerInnerSize / 2),
+            markerY - (MarkerInnerSize / 2),
             MarkerInnerSize,
             MarkerInnerSize);
 
@@ -162,12 +162,12 @@ public sealed class ColorSelectorGrid : UIElement
 
         for (int y = 0; y < TextureSize; y++)
         {
-            float lightness = 1f - y / (TextureSize - 1f);
+            float lightness = 1f - (y / (TextureSize - 1f));
 
             for (int x = 0; x < TextureSize; x++)
             {
                 float hue = x / (TextureSize - 1f);
-                pixels[y * TextureSize + x] = ColorFromGridPosition(hue, lightness);
+                pixels[(y * TextureSize) + x] = ColorFromGridPosition(hue, lightness);
             }
         }
 

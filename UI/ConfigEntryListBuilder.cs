@@ -108,10 +108,7 @@ internal static class ConfigEntryListBuilder
 
             Color currentColor = ConfigReflection.GetMemberValue(member, config) is Color c ? c : Color.White;
 
-            var button = new ColorPickerButton(currentColor, color =>
-            {
-                SetMemberValueAndSave(member, config, color);
-            });
+            var button = new ColorPickerButton(currentColor, color => SetMemberValueAndSave(member, config, color));
 
             resetButton.OnLeftClick += (_, _) =>
             {

@@ -13,7 +13,7 @@ public class QuickModConfigPlayer : ModPlayer
     public override void SaveData(TagCompound tag)
     {
         tag[ViewKey] = (int)NavigationState.CurrentView;
-        
+
         if (NavigationState.CurrentModName != null)
             tag[ModNameKey] = NavigationState.CurrentModName;
 
@@ -25,7 +25,7 @@ public class QuickModConfigPlayer : ModPlayer
     {
         if (tag.ContainsKey(ViewKey))
             NavigationState.CurrentView = (NavigationState.View)tag.GetInt(ViewKey);
-        
+
         NavigationState.CurrentModName = tag.ContainsKey(ModNameKey) ? tag.GetString(ModNameKey) : null;
         NavigationState.CurrentConfigName = tag.ContainsKey(ConfigNameKey) ? tag.GetString(ConfigNameKey) : null;
     }

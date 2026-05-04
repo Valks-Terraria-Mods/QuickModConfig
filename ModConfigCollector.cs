@@ -126,11 +126,19 @@ public sealed class ModConfigCollector
         };
     }
 
-    private static bool IsNumericType(Type type)
+    private static readonly HashSet<TypeCode> NumericTypeCodes =
+    [
+        TypeCode.Byte, TypeCode.SByte,
+        TypeCode.Int16, TypeCode.UInt16, // short, ushort
+        TypeCode.Int32, TypeCode.UInt32, // int, uint
+        TypeCode.Int64, TypeCode.UInt64, // long, ulong
+        TypeCode.Single, TypeCode.Double, TypeCode.Decimal
+    ];
+
+    public static bool IsNumericType(Type type)
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
-        return type == typeof(int) || type == typeof(float) || type == typeof(double)
-            || type == typeof(long) || type == typeof(short) || type == typeof(byte);
+        return NumericTypeCodes.Contains(Type.GetTypeCode(type));
     }
 }
 

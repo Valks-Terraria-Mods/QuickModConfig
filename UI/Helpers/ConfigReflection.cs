@@ -76,40 +76,52 @@ internal static class ConfigReflection
             return fallback;
 
         // Unwrap Nullable<T>
-        Type type = value.GetType();
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-        {
-            var hasValue = (bool)type.GetProperty("HasValue")!.GetValue(value)!;
-            if (!hasValue) return fallback;
-            value = type.GetProperty("Value")!.GetValue(value)!;
-        }
+        Type? underlying = Nullable.GetUnderlyingType(value.GetType());
+        if (underlying != null)
+            value = Convert.ChangeType(value, underlying);
 
         return value switch
         {
             float f => f,
             double d => (float)d,
+            decimal m => (float)m,
             int i => i,
+            uint ui => ui,
             long l => l,
+            ulong ul => ul,
             short s => s,
+            ushort us => us,
             byte b => b,
+            sbyte sb => sb,
             _ => Convert.ToSingle(value)
         };
     }
 
     internal static object ConvertToMemberType(float sliderValue, Type targetType)
     {
-        Type underlying = Nullable.GetUnderlyingType(targetType)!;
+        // Unwrap Nullable<T> – we always work with the underlying type
+        Type? underlying = Nullable.GetUnderlyingType(targetType);
         if (underlying != null)
             targetType = underlying;
 
         if (targetType == typeof(float)) return sliderValue;
         if (targetType == typeof(double)) return (double)sliderValue;
-        if (targetType == typeof(int)) return (int)Math.Round(sliderValue);
-        if (targetType == typeof(long)) return (long)Math.Round(sliderValue);
-        if (targetType == typeof(short)) return (short)Math.Round(sliderValue);
-        if (targetType == typeof(byte)) return (byte)Math.Clamp(Math.Round(sliderValue), 0, 255);
+        if (targetType == typeof(decimal)) return (decimal)sliderValue;
         if (targetType == typeof(bool)) return sliderValue >= 0.5f;
 
+        // All integer types: round first, then clamp to the type's full range.
+        double rounded = Math.Round(sliderValue);
+
+        if (targetType == typeof(int)) return (int)Math.Clamp(rounded, int.MinValue, int.MaxValue);
+        if (targetType == typeof(long)) return (long)Math.Clamp(rounded, long.MinValue, long.MaxValue);
+        if (targetType == typeof(short)) return (short)Math.Clamp(rounded, short.MinValue, short.MaxValue);
+        if (targetType == typeof(sbyte)) return (sbyte)Math.Clamp(rounded, sbyte.MinValue, sbyte.MaxValue);
+        if (targetType == typeof(byte)) return (byte)Math.Clamp(rounded, byte.MinValue, byte.MaxValue);
+        if (targetType == typeof(ushort)) return (ushort)Math.Clamp(rounded, ushort.MinValue, ushort.MaxValue);
+        if (targetType == typeof(uint)) return (uint)Math.Clamp(rounded, uint.MinValue, uint.MaxValue);
+        if (targetType == typeof(ulong)) return (ulong)Math.Clamp(rounded, ulong.MinValue, ulong.MaxValue);
+
+        // Fallback for any other convertible type
         return Convert.ChangeType(sliderValue, targetType);
     }
 }

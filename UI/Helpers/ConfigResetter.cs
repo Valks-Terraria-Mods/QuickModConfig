@@ -7,8 +7,7 @@ internal static class ConfigResetter
 {
     public static void ResetConfig(ModConfigData data)
     {
-        var config = ConfigReflection.GetConfigInstance(data.ConfigType) as ModConfig;
-        if (config is null) return;
+        if (ConfigReflection.GetConfigInstance(data.ConfigType) is not ModConfig config) return;
 
         foreach (var entry in data.ModConfigEntries)
             ConfigReflection.SetMemberValue(entry.Member, config, entry.DefaultValue!);
